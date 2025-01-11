@@ -38,6 +38,10 @@ body {
   width: 99vw;
 }
 
+body > * {
+  background: transparent;
+}
+
 form {
   display: flex;
   flex-direction: column;

@@ -52,38 +52,42 @@ export default {
 
       let entry: Entry;
 
-      try {
-        entry = new Entry(
-          action === 'edit' ? this.formData.id! : 0,
-          this.formData.workplace!,
-          this.formData.payRate!,
-          this.formData.from!,
-          this.formData.to!,
-          this.formData.unpaidBreaks
-            ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
-            .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
-        );
-      } catch (error) {
-        alert('Invalid entry');
-        console.log(this.formData);
-        throw new Error('Invalid entry' + error);
+      if (['add', 'check in', 'edit'].includes(action)) {
+        try {
+          entry = new Entry(
+            action === 'edit' ? this.formData.id! : 0,
+            this.formData.workplace!,
+            this.formData.payRate!,
+            this.formData.from!,
+            this.formData.to!,
+            this.formData.unpaidBreaks
+              ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
+              .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
+          );
+        } catch (error) {
+          alert('Invalid entry');
+          console.log(this.formData);
+          throw new Error('Invalid entry' + error);
+        }
       }
 
       switch (action) {
         case 'add':
         case 'check in':
-          entry.id = this.entries.length + 1;
+          entry!.id = this.entries.length + 1;
 
-          this.entries.push(entry);
+          this.entries.push(entry!);
 
-          if (entry.workplace in this.prevWorkInfos && this.prevWorkInfos[entry.workplace].payRate instanceof Set) {
-            this.prevWorkInfos[entry.workplace].payRate.add(Number(entry.payRate));
+          // Add workplace and pay rate to prevWorkInfos
+          if (entry!.workplace in this.prevWorkInfos && this.prevWorkInfos[entry!.workplace].payRate instanceof Set) {
+            this.prevWorkInfos[entry!.workplace].payRate.add(Number(entry!.payRate));
           } else {
-            this.prevWorkInfos[entry.workplace] = {
-              payRate: new Set<number>([Number(entry.payRate)])
+            this.prevWorkInfos[entry!.workplace] = {
+              payRate: new Set<number>([Number(entry!.payRate)])
             };
           }
 
+          // Remove check in time
           if (action === 'check in') {
             this.checkInTime = undefined;
           }
@@ -94,17 +98,20 @@ export default {
           this.entries.splice(
             this.entries.findIndex((e) => e.id === entry.id),
             1,
-            entry
+            entry!
           );
           break;
 
         case 'delete':
-          this.formData?.id
-            ? this.entries.splice(
-                this.entries.findIndex((e) => e.id === this.formData!.id),
-                1
-              )
-            : alert('Invalid entry');
+          if (!this.formData || !this.formData.id) {
+            alert('Invalid entry');
+            throw new Error('Invalid entry');
+          }
+
+          this.entries.splice(
+            this.entries.findIndex((e) => e.id === this.formData!.id),
+            1
+          );
           break;
 
         case 'remove check in':

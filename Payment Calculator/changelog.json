@@ -97,5 +97,10 @@
       "[Feature] Add unpaid break time",
       "Improve user interface and experience"
     ]
+  },
+  {
+    "version": "0.3.6",
+    "date": "",
+    "changes": ["[Fix] Unpaid break 'hours' and 'minutes' autocomplete fields display incorrectly"]
   }
 ]

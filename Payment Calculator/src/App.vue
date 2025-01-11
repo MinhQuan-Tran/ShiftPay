@@ -5,6 +5,7 @@ import changelog from '@/../changelog.json';
 import { mapStores } from 'pinia';
 import { useUserDataStore } from '@/stores/userData';
 
+import MainMenu from '@/components/MainMenu.vue';
 import WeekSchedule from '@/components/WeekSchedule.vue';
 import DaySchedule from '@/components/DaySchedule.vue';
 import BaseDialog from '@/components/BaseDialog.vue';
@@ -12,52 +13,13 @@ import BaseDialog from '@/components/BaseDialog.vue';
 export default {
   data() {
     return {
-      isDev: import.meta.env.DEV,
       selectedDate: new Date(new Date().setHours(0, 0, 0, 0)),
-      openChangelogDialog: Function
+      openChangelogDialog: Function,
+      menuOpened: false
     };
   },
 
   methods: {
-    downloadData() {
-      const data = JSON.stringify(localStorage);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'localStorageData.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    },
-
-    uploadData(event: Event) {
-      const fileInput = event.target as HTMLInputElement;
-      const file = fileInput.files ? fileInput.files[0] : null;
-
-      if (!file) return; // Do nothing if no file is selected
-
-      const reader = new FileReader();
-
-      reader.onload = (e: ProgressEvent<FileReader>): void => {
-        try {
-          const data = JSON.parse(e.target?.result as string);
-
-          // Clear existing localStorage data and add new data
-          localStorage.clear();
-          Object.keys(data).forEach((key) => {
-            localStorage.setItem(key, data[key]);
-          });
-        } catch (error) {
-          // Silent error, you can add console.log for debugging
-          console.error('Invalid JSON file', error);
-        }
-
-        alert('Data imported successfully');
-      };
-
-      reader.readAsText(file);
-    },
-
     versionChanges(): {
       version: string;
       date: string;
@@ -92,6 +54,7 @@ export default {
     ...mapStores(useUserDataStore)
   },
   components: {
+    MainMenu,
     WeekSchedule,
     DaySchedule,
     BaseDialog
@@ -123,8 +86,16 @@ export default {
 </script>
 
 <template>
-  <input type="file" id="fileInput" accept=".json" @change="uploadData" v-if="isDev" />
-  <button id="downloadButton" @click="downloadData">Download Data</button>
+  <div class="header">
+    <h1>Payment Calculator</h1>
+    <div class="menu-btn" @click="menuOpened = !menuOpened" :class="{ open: menuOpened }">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <MainMenu v-if="menuOpened"></MainMenu>
+    </div>
+  </div>
+
   <WeekSchedule v-model:selected-date="selectedDate" />
   <hr />
   <DaySchedule :selected-date="selectedDate" />
@@ -146,6 +117,48 @@ export default {
 </template>
 
 <style scoped>
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  position: relative;
+}
+
+.menu-btn .bar {
+  width: 100%;
+  height: 4px;
+  background-color: light-dark(#121212, #f4f4f4);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Open state styles */
+.menu-btn.open .bar:nth-child(1) {
+  transform: rotate(45deg);
+  top: 50%;
+  position: absolute;
+}
+
+.menu-btn.open .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-btn.open .bar:nth-child(3) {
+  transform: rotate(-45deg);
+  top: 50%;
+  position: absolute;
+}
+
 hr {
   margin: var(--padding);
 }

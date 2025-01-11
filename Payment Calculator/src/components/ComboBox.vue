@@ -18,31 +18,35 @@ export default {
   },
   created() {
     this.$nextTick(() => {
+      const input = (this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement;
+      const comboBox = this.$refs['combo-box'] as HTMLDivElement;
+      const datalist = this.$refs.datalist as HTMLDivElement;
+      const slot = this.$refs.slot as HTMLElement;
+
       // Disable input autocomplete
-      ((this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement).setAttribute(
-        'autocomplete',
-        'off'
-      );
+      input.setAttribute('autocomplete', 'off');
 
       // Show the datalist when the input is focused
-      ((this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement).addEventListener('focus', () => {
-        (this.$refs.datalist as HTMLDivElement).classList.add('show');
-        (this.$refs['input-field'] as HTMLDivElement).style.zIndex = '1';
+      input.addEventListener('focus', () => {
+        datalist.classList.add('show');
+        comboBox.style.zIndex = '1';
+        datalist.style.paddingTop = `${slot.getBoundingClientRect().height}px`;
       });
 
       // Hide the datalist when the input is blurred
-      ((this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement).addEventListener('blur', () => {
+      input.addEventListener('blur', () => {
         // Fire the click event after the hide the datalist
-        (this.$refs.datalist as HTMLDivElement).classList.remove('show');
+        datalist.classList.remove('show');
         setTimeout(() => {
-          (this.$refs['input-field'] as HTMLDivElement).style.zIndex = '0';
+          comboBox.style.zIndex = '0';
         }, 500);
       });
     });
   },
+
   updated() {
-    const slot = this.$refs.slot as HTMLElement;
     const datalist = this.$refs.datalist as HTMLElement;
+    const slot = this.$refs.slot as HTMLElement;
 
     datalist.style.paddingTop = `${slot.getBoundingClientRect().height}px`;
   }
@@ -50,7 +54,7 @@ export default {
 </script>
 
 <template>
-  <div class="input-field" ref="input-field">
+  <div class="combo-box" ref="combo-box">
     <div ref="slot">
       <slot></slot>
     </div>
@@ -74,7 +78,7 @@ export default {
 </template>
 
 <style scoped>
-.input-field {
+.combo-box {
   position: relative;
   border-radius: var(--border-radius);
 }
@@ -82,16 +86,16 @@ export default {
 .datalist {
   position: absolute;
   top: 0;
-  left: 1px;
+  left: calc(var(--border-radius) / 2);
   z-index: -1;
-  border-radius: var(--border-radius);
   border: 1px solid var(--text-color-faded);
   box-sizing: border-box;
   overflow: hidden;
-  width: calc(100% - 2px);
+  width: calc(100% - var(--border-radius));
   font-size: inherit;
   background-color: var(--input-background-color);
   box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.5);
+  border-radius: var(--border-radius);
   /* Small delay when closing to let the click event fire */
   transition: all 0.3s allow-discrete 0.2s;
   transform-origin: top;

@@ -11,6 +11,7 @@ export default {
       required: true
     }
   },
+
   data() {
     return {
       formData: {
@@ -18,15 +19,18 @@ export default {
       }
     };
   },
+
   computed: {
     ...mapWritableState(useUserDataStore, ['entries'])
   },
+
   emits: {
     clearEntries(payload: string) {
       const options = ['day', 'week', 'all'];
       return options.includes(payload);
     }
   },
+
   methods: {
     clearEntries(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
@@ -50,17 +54,18 @@ export default {
           // otherwise, minus 1 day to the current day (Monday = 0, Tuesday = 1,...)
           startTime.setDate(startTime.getDate() - (startTime.getDay() == 0 ? 7 : startTime.getDay() - 1) + 1); // Monday
           endTime.setDate(endTime.getDate() - (endTime.getDay() == 0 ? 7 : endTime.getDay() - 1) + 7); // Sunday
-
         // Then filter out entries like in the 'day' case
 
         // eslint-disable-next-line no-fallthrough
         case 'day':
-          this.entries = this.entries.filter((entry) => {
-            const fromDate = new Date(entry.from);
-            const toDate = new Date(entry.to);
+          console.log(startTime, endTime);
 
-            // Filter out entries that have from and to time are between the start and end time
-            return !(startTime <= fromDate && fromDate <= endTime && startTime <= toDate && toDate <= endTime);
+          this.entries = this.entries.filter((entry) => {
+            const fromTime = new Date(entry.from);
+            const toTime = new Date(entry.to);
+
+            // Filter out entries that intersect with the time range
+            return !(fromTime <= endTime && toTime >= startTime);
           });
           break;
 
@@ -73,22 +78,13 @@ export default {
           throw new Error('Invalid option');
       }
 
-      if (option !== 'all') {
-        this.entries = this.entries.filter((entry) => {
-          const fromDate = new Date(entry.from);
-          const toDate = new Date(entry.to);
-
-          // Filter out entries that have from and to time are between the start and end time
-          return !(startTime <= fromDate && fromDate <= endTime && startTime <= toDate && toDate <= endTime);
-        });
-      }
-
       form.reset();
 
       const dialog = form.closest('dialog') as HTMLDialogElement;
       dialog?.close();
     }
   },
+
   components: {
     ButtonConfirm
   }

@@ -9,6 +9,7 @@ export const useUserDataStore = defineStore('userData', {
           .filter((entry: any) => entry !== null)
           .map((entry: any) => {
             try {
+              // entry.id will be converted to entry._id when saved to localStorage
               return new Entry(
                 entry.id || entry._id,
                 entry.workplace || entry._workplace,
