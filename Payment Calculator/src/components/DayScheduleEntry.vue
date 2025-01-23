@@ -3,8 +3,6 @@ import { Entry } from '@/classes';
 
 import { currencyFormat, toTimeStr } from '@/utils';
 
-import ButtonConfirm from './ButtonConfirm.vue';
-
 export default {
   props: {
     entry: {
@@ -68,7 +66,7 @@ export default {
       <summary>
         <div class="workplace">{{ entry.workplace }}</div>
         <div class="billable-time">
-          {{ entry.billableDuration.format('short') }}
+          {{ entry.billableDuration?.format('short') ?? 'error' }}
           <img
             width="48"
             height="48"
@@ -77,14 +75,23 @@ export default {
             class="inline-icon"
           />
         </div>
-        <div class="earning">{{ currencyFormat(entry.income) }}</div>
+        <div class="earning">
+          <img
+            width="48"
+            height="48"
+            src="https://img.icons8.com/fluency/48/cash--v1.png"
+            alt="cash--v1"
+            class="inline-icon"
+          />
+          {{ entry.income ? currencyFormat(entry.income) : 'error' }}
+        </div>
         <div class="unpaid-breaks">
           {{ entry.totalBreakDuration.format('short') }}
           <img width="48" height="48" src="https://img.icons8.com/fluency/48/tea.png" alt="tea" class="inline-icon" />
         </div>
       </summary>
       <div class="details">
-        <!-- TODO: Add Hourly Rate, Shift Duration (Before Breaks), Notes or Description -->
+        <!-- TODO: Add Shift Duration (Before Breaks), Role, Notes or Description -->
         <div class="secondary-info">
           <div class="others">
             <div class="hourly-rate">{{ currencyFormat(entry.payRate) }}/hr</div>

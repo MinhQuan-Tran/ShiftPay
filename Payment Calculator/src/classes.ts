@@ -1,6 +1,6 @@
 export class Duration {
-  private _hours: number | undefined;
-  private _minutes: number | undefined;
+  private _hours?: number;
+  private _minutes?: number;
 
   constructor(props?: { hours?: number; minutes?: number; from?: Date; to?: Date }) {
     const { hours, minutes, from, to } = props ?? {};
@@ -31,7 +31,7 @@ export class Duration {
     return this._minutes ?? 0;
   }
 
-  set hours(hours: number) {
+  set hours(hours: number | undefined) {
     if (hours === undefined) {
       this._hours = undefined;
       return;
@@ -48,7 +48,7 @@ export class Duration {
     this._hours = Number(hours);
   }
 
-  set minutes(minutes: number) {
+  set minutes(minutes: number | undefined) {
     if (Number(minutes) < 0) {
       throw new Error('Minutes cannot be negative');
     }
@@ -136,16 +136,24 @@ export class Entry {
     );
   }
 
-  get billableDuration(): Duration {
+  get billableDuration(): Duration | undefined {
     const billableTimeInMinutes =
       this.duration.hours * 60 +
       this.duration.minutes -
       (this.totalBreakDuration.hours * 60 + this.totalBreakDuration.minutes);
 
+    if (billableTimeInMinutes < 0) {
+      return;
+    }
+
     return new Duration({ minutes: billableTimeInMinutes });
   }
 
-  get income(): number {
+  get income(): number | undefined {
+    if (!this.billableDuration) {
+      return;
+    }
+
     return this.payRate * (this.billableDuration.hours + this.billableDuration.minutes / 60);
   }
 
