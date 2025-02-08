@@ -83,7 +83,7 @@ export default {
             alt="cash--v1"
             class="inline-icon"
           />
-          {{ entry.income ? currencyFormat(entry.income) : 'error' }}
+          {{ entry.income === undefined ? 'error' : currencyFormat(entry.income) }}
         </div>
         <div class="unpaid-breaks">
           {{ entry.totalBreakDuration.format('short') }}
@@ -91,7 +91,6 @@ export default {
         </div>
       </summary>
       <div class="details">
-        <!-- TODO: Add Shift Duration (Before Breaks), Role, Notes or Description -->
         <div class="secondary-info">
           <div class="others">
             <div class="hourly-rate">{{ currencyFormat(entry.payRate) }}/hr</div>

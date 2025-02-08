@@ -25,6 +25,7 @@ export default {
 
       // Disable input autocomplete
       input.setAttribute('autocomplete', 'off');
+      input.setAttribute('aria-autocomplete', 'inline');
 
       // Show the datalist when the input is focused
       input.addEventListener('focus', () => {

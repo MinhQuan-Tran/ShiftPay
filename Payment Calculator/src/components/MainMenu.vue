@@ -19,6 +19,8 @@ export default {
     },
 
     uploadData(event: Event) {
+      if (!confirm('Are you sure you want to import data?\nThis will overwrite your existing data.')) return;
+
       const fileInput = event.target as HTMLInputElement;
       const file = fileInput.files ? fileInput.files[0] : null;
 
@@ -40,7 +42,7 @@ export default {
           console.error('Invalid JSON file', error);
         }
 
-        alert('Data imported successfully');
+        alert('Data imported successfully, please refresh the page to see the changes.');
       };
 
       reader.readAsText(file);

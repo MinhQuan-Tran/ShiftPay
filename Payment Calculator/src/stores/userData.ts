@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
-import type { WorkInfos } from '@/types';
+import type { EntryTemplates, WorkInfos } from '@/types';
 import { Duration, Entry } from '@/classes';
 
 export const useUserDataStore = defineStore('userData', {
   state: () => ({
+    // entries: [] as Array<Entry>,
     entries: (localStorage.getItem('entries')
       ? JSON.parse(localStorage.getItem('entries')!)
           .filter((entry: any) => entry !== null)
@@ -27,10 +28,12 @@ export const useUserDataStore = defineStore('userData', {
           })
       : []) as Array<Entry>,
 
-    checkInTime: (localStorage.getItem('checkInTime') ? new Date(localStorage.getItem('checkInTime')!) : undefined) as
-      | Date
-      | undefined,
+    // checkInTime: Date | undefined,
+    checkInTime: (localStorage.getItem('checkInTime')
+      ? new Date(JSON.parse(localStorage.getItem('checkInTime')!))
+      : undefined) as Date | undefined,
 
+    // prevWorkInfos: WorkInfos
     prevWorkInfos: (localStorage.getItem('prevWorkInfos') &&
     !Array.isArray(JSON.parse(localStorage.getItem('prevWorkInfos')!))
       ? JSON.parse(localStorage.getItem('prevWorkInfos')!, (key, value) => {
@@ -39,7 +42,27 @@ export const useUserDataStore = defineStore('userData', {
           }
           return value;
         })
-      : {}) as WorkInfos
+      : {}) as WorkInfos,
+
+    // entryTemplates: EntryTemplates,
+    entryTemplates: (localStorage.getItem('entryTemplates') &&
+    !Array.isArray(JSON.parse(localStorage.getItem('entryTemplates')!))
+      ? JSON.parse(localStorage.getItem('entryTemplates')!, (key, value) => {
+          if (key === 'entry') {
+            return new Entry(
+              value.id || value._id,
+              value.workplace || value._workplace,
+              value.payRate || value._payRate,
+              new Date(value.from || value._from),
+              new Date(value.to || value._to),
+              value.unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
+                value._unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
+                []
+            );
+          }
+          return value;
+        })
+      : {}) as EntryTemplates
   }),
 
   actions: {
@@ -97,9 +120,12 @@ export const useUserDataStore = defineStore('userData', {
     },
 
     handleStorageChange(event: any) {
+      // if (!this.keys().has(event.key)) return;
+
       console.log(
         `Storage change detected: [${event.key}]:\n\nOld value:\n${event.oldValue}\n\nNew value:\n${event.newValue}`
       );
+
       if (import.meta.env.DEV) {
         try {
           (this as any)[event.key] = JSON.parse(event.newValue);

@@ -11,6 +11,10 @@ import InputLabel from './InputLabel.vue';
 
 export default {
   props: {
+    selectedDate: {
+      type: Date,
+      required: true
+    },
     entry: {
       type: Object as () => Partial<Entry>,
       default: () => ({}) as Partial<Entry>
@@ -24,12 +28,14 @@ export default {
   data() {
     return {
       formData: deepClone<Partial<Entry>>(this.entry),
+      saveEntryTemplate: false,
+      entryName: '',
       hiddenElements: [] as Element[]
     };
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['entries', 'checkInTime', 'prevWorkInfos'])
+    ...mapWritableState(useUserDataStore, ['entries', 'checkInTime', 'prevWorkInfos', 'entryTemplates'])
   },
 
   emits: {
@@ -43,6 +49,34 @@ export default {
     // Cannot use alert directly on event
     alert(message: string) {
       alert(message);
+    },
+
+    quickAddEntry(entry: Entry) {
+      const newEntry = new Entry(
+        this.entries.length + 1,
+        entry.workplace,
+        entry.payRate,
+        new Date(entry.from),
+        new Date(entry.to),
+        deepClone(entry.unpaidBreaks) as Duration[]
+      );
+
+      const duration = newEntry.to.getTime() - newEntry.from.getTime();
+
+      newEntry.from.setFullYear(
+        this.selectedDate.getFullYear(),
+        this.selectedDate.getMonth(),
+        this.selectedDate.getDate()
+      );
+      newEntry.to.setTime(newEntry.from.getTime() + duration);
+
+      this.entries.push(newEntry);
+
+      const form = this.$refs.entryForm as HTMLFormElement;
+      form.reset();
+
+      const dialog = form.closest('dialog') as HTMLDialogElement;
+      dialog?.close();
     },
 
     entryAction(event: Event) {
@@ -64,10 +98,16 @@ export default {
               ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
               .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
           );
+
+          if (this.saveEntryTemplate) {
+            this.entryTemplates[this.entryName] = {
+              entry: entry
+            };
+          }
         } catch (error) {
           alert('Invalid entry');
-          console.log(this.formData);
-          throw new Error('Invalid entry' + error);
+          console.error(this.formData);
+          throw new Error('Invalid entry: ' + error);
         }
       }
 
@@ -184,10 +224,88 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent="entryAction" @reset.prevent="resetForm">
+  <form @submit.prevent="entryAction" @reset.prevent="resetForm" ref="entryForm">
     <input type="hidden" name="id" v-model="formData.id" />
 
-    <InputLabel label="Workplace">
+    <InputLabel labelStr="Entry Templates" v-if="action === 'add'">
+      <div class="entry-templates">
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          type="button"
+          :class="['entry-info', { active: saveEntryTemplate }]"
+          id="save-entry-template-btn"
+          @click="saveEntryTemplate = !saveEntryTemplate"
+        >
+          <div class="name">&nbsp;+&nbsp;</div>
+        </button>
+      </div>
+    </InputLabel>
+
+    <InputLabel labelStr="Entry Name" forId="entry-name" v-if="saveEntryTemplate">
+      <input
+        type="text"
+        id="entry-name"
+        name="entryName"
+        placeholder="e.g. McDonald | Delivery"
+        v-model="entryName"
+        required
+      />
+    </InputLabel>
+
+    <InputLabel labelStr="Workplace" forId="workplace">
       <ComboBox
         :value="formData?.workplace || ''"
         @update:value="(newValue) => (formData.workplace = newValue)"
@@ -199,14 +317,14 @@ export default {
           type="text"
           id="workplace"
           name="workplace"
-          placeholder="e.g. Restaurant Name"
+          placeholder="e.g. Company Name"
           v-model="formData.workplace"
           required
         />
       </ComboBox>
     </InputLabel>
 
-    <InputLabel label="Pay Rate">
+    <InputLabel labelStr="Pay Rate" forId="pay-rate">
       <ComboBox
         :value="formData.payRate ? formData.payRate.toString() : ''"
         @update:value="(newValue: number | undefined) => (formData.payRate = Number(newValue))"
@@ -232,7 +350,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel label="From">
+    <InputLabel labelStr="From" forId="from">
       <input
         type="datetime-local"
         id="from"
@@ -250,7 +368,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel label="To">
+    <InputLabel labelStr="To" forId="to">
       <input
         type="datetime-local"
         id="to"
@@ -262,77 +380,82 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel label="Unpaid Break(s)">
-      <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
-        <!-- Hours -->
-        <ComboBox
-          :value="unpaidBreak.hours?.toString()"
-          @update:value="
-            (hours) => {
-              !isNaN(Number(hours))
-                ? (formData.unpaidBreaks![index].hours = Number(hours))
-                : alert('Invalid input: Please enter a valid number.');
-            }
-          "
-          :list="[...Array((formData.billableDuration?.hours ?? 0) + 1).keys()].map(String)"
-        >
-          <input
-            type="number"
-            name="unpaidBreak-hours"
-            placeholder="hours"
-            :value="formData.unpaidBreaks![index].hours > 0 ? formData.unpaidBreaks![index].hours : ''"
-            @input="
-              (event) => {
-                const value = Number((event.target as HTMLInputElement).value);
-                formData.unpaidBreaks![index].hours = Math.min(value, 24);
+    <InputLabel labelStr="Unpaid Break(s)" forId="unpaid-breaks">
+      <div class="unpaid-breaks">
+        <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
+          <!-- Hours -->
+          <ComboBox
+            @update:value="
+              (hours) => {
+                !isNaN(Number(hours))
+                  ? (formData.unpaidBreaks![index].hours = Number(hours))
+                  : alert('Invalid input: Please enter a valid number.');
               }
             "
-            step="1"
-            min="0"
-            max="24"
-          />
-        </ComboBox>
+            :list="[...Array((formData.billableDuration?.hours ?? 0) + 1).keys()].map(String)"
+          >
+            <input
+              type="number"
+              name="unpaidBreak-hours"
+              placeholder="hours"
+              :value="formData.unpaidBreaks![index].hours > 0 ? formData.unpaidBreaks![index].hours : ''"
+              @input="
+                (event) => {
+                  const value = Number((event.target as HTMLInputElement).value);
+                  formData.unpaidBreaks![index].hours = Math.min(value, 24);
+                }
+              "
+              step="1"
+              min="0"
+              max="24"
+            />
+          </ComboBox>
 
-        <!-- Minutes (0, 15, 30, 45) -->
-        <ComboBox
-          :value="unpaidBreak.minutes?.toString()"
-          @update:value="
-            (minutes) => {
-              !isNaN(Number(minutes))
-                ? (formData.unpaidBreaks![index].minutes = Number(minutes))
-                : alert('Invalid input: Please enter a valid number.');
-            }
-          "
-          :list="[...Array(4).keys()].map((i) => (i * 15).toString())"
-        >
-          <input
-            type="number"
-            name="unpaidBreak-minutes"
-            placeholder="minutes"
-            :value="formData.unpaidBreaks![index].minutes > 0 ? formData.unpaidBreaks![index].minutes : ''"
-            @input="
-              (event) => {
-                const value = Number((event.target as HTMLInputElement).value);
-                formData.unpaidBreaks![index].minutes = Math.min(value, 59);
+          <!-- Minutes (0, 15, 30, 45) -->
+          <ComboBox
+            @update:value="
+              (minutes) => {
+                !isNaN(Number(minutes))
+                  ? (formData.unpaidBreaks![index].minutes = Number(minutes))
+                  : alert('Invalid input: Please enter a valid number.');
               }
             "
-            step="1"
-            min="0"
-            max="59"
-          />
-        </ComboBox>
+            :list="[...Array(4).keys()].map((i) => (i * 15).toString())"
+          >
+            <input
+              type="number"
+              name="unpaidBreak-minutes"
+              placeholder="minutes"
+              :value="formData.unpaidBreaks![index].minutes > 0 ? formData.unpaidBreaks![index].minutes : ''"
+              @input="
+                (event) => {
+                  const value = Number((event.target as HTMLInputElement).value);
+                  formData.unpaidBreaks![index].minutes = Math.min(value, 59);
+                }
+              "
+              step="1"
+              min="0"
+              max="59"
+            />
+          </ComboBox>
 
-        <!-- Delete unpaid break -->
-        <button class="delete-btn danger" type="button" @click="formData.unpaidBreaks?.splice(index, 1)">
-          <div class="icons8-close"></div>
-        </button>
+          <!-- Delete unpaid break -->
+          <button class="delete-btn danger" type="button" @click="formData.unpaidBreaks?.splice(index, 1)">
+            <div class="icons8-close"></div>
+          </button>
+        </div>
+
+        <!-- Add unpaid break -->
+        <button type="button" @click="addUnpaidBreak">+</button>
       </div>
+    </InputLabel>
 
-      <!-- Add unpaid break -->
-      <button type="button" @click="addUnpaidBreak">+</button>
+    <InputLabel labelStr="Recurring?" forId="recurring">
+      <input type="checkbox" name="recurring" id="recurring" />
     </InputLabel>
 
     <div ref="actionBar" class="actions">
+      <!-- Edit -->
       <template v-if="action == 'edit'">
         <ButtonConfirm
           @is-holding="focusButtonConfirm"
@@ -340,47 +463,81 @@ export default {
           name="action"
           value="delete"
           class="danger"
+          id="delete-entry-btn"
           formnovalidate
         >
           Delete
         </ButtonConfirm>
-        <button type="submit" name="action" value="edit" class="warning">Edit Entry</button>
+        <button type="submit" name="action" value="edit" class="warning" id="edit-entry-btn">Edit Entry</button>
       </template>
 
-      <template v-else-if="action == 'add'">
-        <button type="submit" name="action" value="add" class="primary">Add Entry</button>
-      </template>
-
-      <template v-else-if="action == 'check in/out'">
+      <!-- Add, Check in/out -->
+      <template v-else>
         <ButtonConfirm
+          v-if="action == 'check in/out'"
           @is-holding="focusButtonConfirm"
           type="submit"
           name="action"
           value="remove check in"
           class="danger"
+          id="remove-check-in-out-btn"
           formnovalidate
         >
           Remove
         </ButtonConfirm>
-        <button type="submit" name="action" value="check in" class="primary">Add Entry</button>
+
+        <button
+          type="submit"
+          name="action"
+          value="add"
+          :class="['primary', { active: saveEntryTemplate }]"
+          id="add-entry-btn"
+        >
+          {{ saveEntryTemplate ? 'Save & ' : '' }}Add Entry
+        </button>
       </template>
     </div>
   </form>
 </template>
 
 <style scoped>
+form {
+  gap: var(--padding);
+}
+
+.entry-templates {
+  position: relative;
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap; /* Prevent wrapping */
+  gap: var(--padding-small);
+  padding: var(--padding-small);
+}
+
+.entry-templates .entry-info {
+  flex: 0 0 auto; /* Prevent buttons from shrinking or growing */
+  background-color: var(--input-background-color);
+  min-width: 80px;
+}
+
+#save-entry-template-btn.active,
+#add-entry-btn.active {
+  background-color: var(--success-color) !important;
+  color: var(--text-color-black);
+}
+
 .actions {
-  transition: gap 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .actions > * {
   max-width: 100%;
   overflow: hidden;
-  transition: max-width 0.3s ease;
 }
 
 .actions button {
   flex: 1;
+  transition: all 0.3s ease;
 }
 
 .actions .danger {
@@ -394,6 +551,13 @@ export default {
 .hide {
   max-width: 0;
   padding: 0;
+}
+
+.unpaid-breaks {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--padding-small);
 }
 
 .unpaid-break {

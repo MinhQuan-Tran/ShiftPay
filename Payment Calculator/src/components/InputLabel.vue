@@ -1,18 +1,22 @@
 <script lang="ts">
 export default {
   props: {
-    label: {
+    labelStr: {
       type: String,
       required: true
+    },
+    forId: {
+      type: String,
+      default: ''
     }
   }
 };
 </script>
 
 <template>
-  <div class="input">
+  <div class="input" :for="forId">
     <!-- Intentionally not using "for" to let user clicks outside to lose input focus -->
-    <label>{{ label }}</label>
+    <label>{{ labelStr }}</label>
     <slot></slot>
   </div>
 </template>
@@ -20,16 +24,9 @@ export default {
 <style scoped>
 .input {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--border-radius);
-  border: none;
-  padding: var(--padding-small) 0;
-  margin: 0;
-  gap: var(--padding);
 }
 
-.input > * {
-  flex: 1;
+label {
+  padding-bottom: var(--padding-small);
 }
 </style>

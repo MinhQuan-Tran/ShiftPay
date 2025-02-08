@@ -187,7 +187,7 @@ export default {
     </BaseDialog>
 
     <BaseDialog ref="entryDialog" :title="entryFormData.title" :reset-forms="entryFormData.resetForm">
-      <EntryForm :entry="entryFormData.placeholderEntry" :action="entryFormData.action" />
+      <EntryForm :selected-date="selectedDate" :entry="entryFormData.placeholderEntry" :action="entryFormData.action" />
     </BaseDialog>
   </div>
 </template>
