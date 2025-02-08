@@ -239,51 +239,6 @@ export default {
           <div class="name">{{ name }}</div>
         </button>
         <button
-          v-for="(template, name) in entryTemplates"
-          :key="name"
-          @click="quickAddEntry(template.entry)"
-          type="button"
-          class="entry-info"
-        >
-          <div class="name">{{ name }}</div>
-        </button>
-        <button
-          v-for="(template, name) in entryTemplates"
-          :key="name"
-          @click="quickAddEntry(template.entry)"
-          type="button"
-          class="entry-info"
-        >
-          <div class="name">{{ name }}</div>
-        </button>
-        <button
-          v-for="(template, name) in entryTemplates"
-          :key="name"
-          @click="quickAddEntry(template.entry)"
-          type="button"
-          class="entry-info"
-        >
-          <div class="name">{{ name }}</div>
-        </button>
-        <button
-          v-for="(template, name) in entryTemplates"
-          :key="name"
-          @click="quickAddEntry(template.entry)"
-          type="button"
-          class="entry-info"
-        >
-          <div class="name">{{ name }}</div>
-        </button>
-        <button
-          v-for="(template, name) in entryTemplates"
-          :key="name"
-          @click="quickAddEntry(template.entry)"
-          type="button"
-          class="entry-info"
-        >
-          <div class="name">{{ name }}</div>
-        </button>
-        <button
           type="button"
           :class="['entry-info', { active: saveEntryTemplate }]"
           id="save-entry-template-btn"
