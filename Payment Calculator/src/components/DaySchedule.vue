@@ -96,8 +96,8 @@ export default {
         action: 'add',
         placeholderEntry: {
           // Set the from and to time to the selected date with the current time
-          from: new Date(this.selectedDate.setHours(new Date().getHours(), new Date().getMinutes())),
-          to: new Date(this.selectedDate.setHours(new Date().getHours(), new Date().getMinutes()))
+          from: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes())),
+          to: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes()))
         }
       };
       (this.$refs.entryDialog as any).showModal();
