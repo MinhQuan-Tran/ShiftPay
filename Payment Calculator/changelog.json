@@ -68,10 +68,10 @@
     "version": "0.3.2",
     "date": "2024-10-07T00:00:00+1000",
     "changes": [
-      "[Fix] Incorrect version comparison",
-      "[Fix] Duplicate and missing autocomplete work infos",
       "[Feature] Allow work on multiple days",
       "[Feature] More week summary details",
+      "[Fix] Incorrect version comparison",
+      "[Fix] Duplicate and missing autocomplete work infos",
       "Improve user interface and experience",
       "Optimise code"
     ]
@@ -85,28 +85,29 @@
     "version": "0.3.4",
     "date": "2024-10-21T00:00:00+1100",
     "changes": [
-      "[Fix] Duplicate entry calculations for multi-day durations",
-      "[Feature] Update version only when the What's new dialog is closed"
+      "[Feature] Update version only when the What's new dialog is closed",
+      "[Fix] Duplicate entry calculations for multi-day durations"
     ]
   },
   {
     "version": "0.3.5",
     "date": "2024-12-25T00:00:00+1100",
     "changes": [
-      "[Fix] Entry changes before pressing the Edit button",
       "[Feature] Add unpaid break time",
+      "[Fix] Entry changes before pressing the Edit button",
       "Improve user interface and experience"
     ]
   },
   {
-    "version": "0.3.6",
-    "date": "",
+    "version": "0.4.0",
+    "date": "2025-02-10T00:00:00+1100",
     "changes": [
       "[Feature] Add Entry Template",
       "[Feature] Add Entry Recurrence",
       "[Fix] Unpaid break 'hours' and 'minutes' autocomplete fields display incorrectly",
       "[Fix] Clear entries not working correctly",
-      "[Fix] Selected day not being highlighted after adding a new entry"
+      "[Fix] Selected day not being highlighted after adding a new entry",
+      "Improve user interface and experience"
     ]
   }
 ]
