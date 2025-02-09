@@ -1,11 +1,5 @@
 <script lang="ts">
 export default {
-  data() {
-    return {
-      isDev: import.meta.env.DEV
-    };
-  },
-
   methods: {
     downloadData() {
       const data = JSON.stringify(localStorage);
@@ -53,7 +47,7 @@ export default {
 
 <template>
   <div class="main-menu">
-    <input type="file" id="fileInput" accept=".json" @change="uploadData" v-if="isDev" />
+    <input type="file" id="fileInput" accept=".json" @change="uploadData" />
     <button id="downloadButton" @click="downloadData">Download Data</button>
   </div>
 </template>
