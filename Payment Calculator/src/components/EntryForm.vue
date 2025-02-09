@@ -30,6 +30,7 @@ export default {
       formData: deepClone<Partial<Entry>>(this.entry),
       saveEntryTemplate: false,
       deleteEntryTemplate: false,
+      recurringEntry: false,
       entryName: '',
       hiddenElements: [] as Element[] // Elements to hide when holding a button in action bar
     };
@@ -93,8 +94,8 @@ export default {
             action === 'edit' ? this.formData.id! : 0,
             this.formData.workplace!,
             this.formData.payRate!,
-            this.formData.from!,
-            this.formData.to!,
+            new Date(this.formData.from!),
+            new Date(this.formData.to!),
             this.formData.unpaidBreaks
               ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
               .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
@@ -114,10 +115,37 @@ export default {
 
       switch (action) {
         case 'add':
-        case 'check in':
-          entry!.id = this.entries.length + 1;
+        case 'check in': {
+          const recurringDay = Number((this.$refs['recurring-day'] as HTMLInputElement)?.value);
+          const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
+          const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
+          const recurringEndDate = new Date(
+            (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? entry!.from
+          );
 
-          this.entries.push(entry!);
+          recurringEndDate.setHours(23, 59, 59, 999);
+
+          console.log(recurringDay, recurringMonth, recurringYear, recurringEndDate);
+
+          for (
+            const currentFromDate = new Date(entry!.from);
+            currentFromDate < recurringEndDate;
+            currentFromDate.setDate(currentFromDate.getDate() + recurringDay),
+              currentFromDate.setMonth(currentFromDate.getMonth() + recurringMonth),
+              currentFromDate.setFullYear(currentFromDate.getFullYear() + recurringYear)
+          ) {
+            const recurringEntry = new Entry(
+              this.entries.length + 1,
+              entry!.workplace,
+              entry!.payRate,
+              new Date(currentFromDate),
+              // entry!.to.getTime() - entry!.from.getTime() is the duration of the entry
+              new Date(currentFromDate.getTime() + entry!.to.getTime() - entry!.from.getTime()),
+              deepClone(entry!.unpaidBreaks) as Duration[]
+            );
+
+            this.entries.push(recurringEntry);
+          }
 
           // Add workplace and pay rate to prevWorkInfos
           if (entry!.workplace in this.prevWorkInfos && this.prevWorkInfos[entry!.workplace].payRate instanceof Set) {
@@ -134,6 +162,7 @@ export default {
           }
 
           break;
+        }
 
         case 'edit':
           this.entries.splice(
@@ -171,10 +200,10 @@ export default {
     },
 
     resetForm() {
-      this.saveEntryTemplate = false;
-      this.deleteEntryTemplate = false;
-      this.entryName = '';
-      this.formData = deepClone<Partial<Entry>>(this.entry);
+      // https://stackoverflow.com/a/50854892
+      if (this.$options.data) {
+        Object.assign(this.$data, (this.$options.data as any).call(this, this));
+      }
     },
 
     focusButtonConfirm(isHolding: boolean) {
@@ -259,7 +288,7 @@ export default {
       </div>
     </InputLabel>
 
-    <InputLabel labelText="Entry Name" forId="entry-name" v-if="saveEntryTemplate">
+    <InputLabel label-text="Entry Name" for-id="entry-name" v-if="saveEntryTemplate">
       <input
         type="text"
         id="entry-name"
@@ -270,7 +299,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelText="Workplace" forId="workplace">
+    <InputLabel label-text="Workplace" for-id="workplace">
       <ComboBox
         :value="formData?.workplace || ''"
         @update:value="(newValue) => (formData.workplace = newValue)"
@@ -289,7 +318,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel labelText="Pay Rate" forId="pay-rate">
+    <InputLabel label-text="Pay Rate" for-id="pay-rate">
       <ComboBox
         :value="formData.payRate ? formData.payRate.toString() : ''"
         @update:value="(newValue: number | undefined) => (formData.payRate = Number(newValue))"
@@ -315,7 +344,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel labelText="From" forId="from">
+    <InputLabel label-text="From" for-id="from">
       <input
         type="datetime-local"
         id="from"
@@ -333,7 +362,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelText="To" forId="to">
+    <InputLabel label-text="To" for-id="to">
       <input
         type="datetime-local"
         id="to"
@@ -345,7 +374,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelText="Unpaid Break(s)" forId="unpaid-breaks">
+    <InputLabel label-text="Unpaid Break(s)" for-id="unpaid-breaks">
       <div class="unpaid-breaks">
         <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
           <!-- Hours -->
@@ -415,8 +444,35 @@ export default {
       </div>
     </InputLabel>
 
-    <InputLabel labelText="Recurring?" forId="recurring">
-      <input type="checkbox" name="recurring" id="recurring" />
+    <InputLabel
+      v-if="action === 'add' || action === 'check in/out'"
+      label-text="Recurring?"
+      for-id="recurring"
+      v-model:toggle-value="recurringEntry"
+    >
+      <div v-if="recurringEntry" class="recurring-inputs">
+        <span>Entry repeat every:</span>
+        <input
+          type="number"
+          ref="recurring-day"
+          id="recurring-day"
+          name="recurringDay"
+          placeholder="Day"
+          min="0"
+          max="31"
+        />
+        <input
+          type="number"
+          ref="recurring-month"
+          id="recurring-month"
+          name="recurringMonth"
+          placeholder="Month"
+          min="0"
+          max="12"
+        />
+        <input type="number" ref="recurring-year" id="recurring-year" name="recurringYear" placeholder="Year" min="0" />
+        <input type="date" ref="recurring-end-date" id="recurring-end-date" name="recurringEndDate" required />
+      </div>
     </InputLabel>
 
     <div ref="actionBar" class="actions">
@@ -540,5 +596,36 @@ form {
 .unpaid-break .delete-btn {
   flex-grow: 0;
   box-sizing: border-box;
+}
+
+.recurring-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    'text text text text'
+    'day month year year'
+    'end-date end-date end-date end-date';
+  gap: var(--padding-small);
+}
+
+.recurring-inputs span {
+  grid-area: text;
+}
+
+.recurring-inputs input#recurring-day {
+  grid-area: day;
+}
+
+.recurring-inputs input#recurring-month {
+  grid-area: month;
+}
+
+.recurring-inputs input#recurring-year {
+  grid-area: year;
+}
+
+.recurring-inputs input#recurring-end-date {
+  grid-area: end-date;
 }
 </style>

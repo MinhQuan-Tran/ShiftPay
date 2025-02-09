@@ -33,7 +33,7 @@ export default {
     <div class="input-header">
       <label>{{ labelText }}</label>
       <label v-if="toggleValue !== undefined" class="switch">
-        <input type="checkbox" :value="toggleValue" @input="$emit('update:toggleValue', !toggleValue)" />
+        <input type="checkbox" :checked="toggleValue" @input="$emit('update:toggleValue', !toggleValue)" />
         <span class="slider round"></span>
       </label>
       <span v-if="subText" class="sub-text">{{ subText }}</span>

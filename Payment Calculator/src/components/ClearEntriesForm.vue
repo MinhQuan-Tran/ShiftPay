@@ -35,10 +35,6 @@ export default {
     clearEntries(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
-      if (!confirm('Are you sure you want to clear this data?\nThis action cannot be undone.')) {
-        return;
-      }
-
       const startTime = new Date(this.selectedDate);
       const endTime = new Date(this.selectedDate);
 
@@ -51,8 +47,10 @@ export default {
         case 'week':
           // Set the start and end time to the beginning and end of the week
           // getDay() returns 0 for Sunday, so the current date need to minus 7 days (1 week)
-          // otherwise, minus 1 day to the current day (Monday = 0, Tuesday = 1,...)
-          startTime.setDate(startTime.getDate() - (startTime.getDay() == 0 ? 7 : startTime.getDay() - 1) + 1); // Monday
+          // otherwise, minus 1 day to the current day (Monday = 1 -> 0, Tuesday = 2 -> 1,...)
+          // => if the current day is Monday, the start time will be the same as the current date
+          // => if the current day is Sunday, the start time will be 6 days before the current date
+          startTime.setDate(startTime.getDate() - (startTime.getDay() == 0 ? 7 : startTime.getDay() - 1)); // Monday
           endTime.setDate(endTime.getDate() - (endTime.getDay() == 0 ? 7 : endTime.getDay() - 1) + 7); // Sunday
         // Then filter out entries like in the 'day' case
 

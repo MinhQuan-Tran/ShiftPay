@@ -101,6 +101,12 @@
   {
     "version": "0.3.6",
     "date": "",
-    "changes": ["[Fix] Unpaid break 'hours' and 'minutes' autocomplete fields display incorrectly"]
+    "changes": [
+      "[Feature] Add Entry Template",
+      "[Feature] Add Entry Recurrence",
+      "[Fix] Unpaid break 'hours' and 'minutes' autocomplete fields display incorrectly",
+      "[Fix] Clear entries not working correctly",
+      "[Fix] Selected day not being highlighted after adding a new entry"
+    ]
   }
 ]
