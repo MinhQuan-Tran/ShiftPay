@@ -149,6 +149,10 @@ button {
   z-index: 1;
 }
 
+button:focus {
+  outline: none;
+}
+
 button.active {
   transition: none;
 }

@@ -2,7 +2,7 @@
   font-family: Arial, Helvetica, sans-serif;
   color-scheme: light dark;
 
-  --primary-color: #82d2fd;
+  --primary-color: #47acff;
   --warning-color: #ffff00;
   --danger-color: #ff6464;
   --success-color: #64ff64;
@@ -61,13 +61,10 @@ input:not([type='checkbox'], [type='radio']) {
   padding: var(--padding);
 }
 
-input:focus {
+input:focus,
+button:focus {
+  transition: outline 0s;
   outline: 2px solid var(--primary-color);
-}
-
-label {
-  margin-bottom: 0.2em;
-  margin-left: var(--border-radius);
 }
 
 button {

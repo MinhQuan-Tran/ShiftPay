@@ -29,8 +29,9 @@ export default {
     return {
       formData: deepClone<Partial<Entry>>(this.entry),
       saveEntryTemplate: false,
+      deleteEntryTemplate: false,
       entryName: '',
-      hiddenElements: [] as Element[]
+      hiddenElements: [] as Element[] // Elements to hide when holding a button in action bar
     };
   },
 
@@ -170,6 +171,9 @@ export default {
     },
 
     resetForm() {
+      this.saveEntryTemplate = false;
+      this.deleteEntryTemplate = false;
+      this.entryName = '';
       this.formData = deepClone<Partial<Entry>>(this.entry);
     },
 
@@ -227,12 +231,18 @@ export default {
   <form @submit.prevent="entryAction" @reset.prevent="resetForm" ref="entryForm">
     <input type="hidden" name="id" v-model="formData.id" />
 
-    <InputLabel labelStr="Entry Templates" v-if="action === 'add'">
+    <InputLabel
+      label-text="Entry Templates"
+      v-if="action === 'add'"
+      v-model:toggle-value="deleteEntryTemplate"
+      toggle-color="var(--danger-color)"
+      sub-text="Delete"
+    >
       <div class="entry-templates">
         <button
           v-for="(template, name) in entryTemplates"
           :key="name"
-          @click="quickAddEntry(template.entry)"
+          @click="deleteEntryTemplate ? delete entryTemplates[name] : quickAddEntry(template.entry)"
           type="button"
           class="entry-info"
         >
@@ -249,7 +259,7 @@ export default {
       </div>
     </InputLabel>
 
-    <InputLabel labelStr="Entry Name" forId="entry-name" v-if="saveEntryTemplate">
+    <InputLabel labelText="Entry Name" forId="entry-name" v-if="saveEntryTemplate">
       <input
         type="text"
         id="entry-name"
@@ -260,7 +270,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelStr="Workplace" forId="workplace">
+    <InputLabel labelText="Workplace" forId="workplace">
       <ComboBox
         :value="formData?.workplace || ''"
         @update:value="(newValue) => (formData.workplace = newValue)"
@@ -279,7 +289,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel labelStr="Pay Rate" forId="pay-rate">
+    <InputLabel labelText="Pay Rate" forId="pay-rate">
       <ComboBox
         :value="formData.payRate ? formData.payRate.toString() : ''"
         @update:value="(newValue: number | undefined) => (formData.payRate = Number(newValue))"
@@ -305,7 +315,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel labelStr="From" forId="from">
+    <InputLabel labelText="From" forId="from">
       <input
         type="datetime-local"
         id="from"
@@ -323,7 +333,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelStr="To" forId="to">
+    <InputLabel labelText="To" forId="to">
       <input
         type="datetime-local"
         id="to"
@@ -335,7 +345,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel labelStr="Unpaid Break(s)" forId="unpaid-breaks">
+    <InputLabel labelText="Unpaid Break(s)" forId="unpaid-breaks">
       <div class="unpaid-breaks">
         <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
           <!-- Hours -->
@@ -405,7 +415,7 @@ export default {
       </div>
     </InputLabel>
 
-    <InputLabel labelStr="Recurring?" forId="recurring">
+    <InputLabel labelText="Recurring?" forId="recurring">
       <input type="checkbox" name="recurring" id="recurring" />
     </InputLabel>
 
@@ -457,7 +467,7 @@ export default {
 
 <style scoped>
 form {
-  gap: var(--padding);
+  gap: calc(var(--padding) * 1.5);
 }
 
 .entry-templates {
