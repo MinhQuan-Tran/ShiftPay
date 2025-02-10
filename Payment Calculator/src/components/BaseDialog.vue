@@ -109,11 +109,19 @@ dialog::backdrop {
   background: transparent;
   user-select: none;
   width: auto;
+  border-radius: 0;
 }
 
 .close-btn,
 .close-btn:hover {
   box-shadow: none;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  opacity: 1;
+  outline: none;
+  background-color: var(--danger-color);
 }
 
 .divider {
