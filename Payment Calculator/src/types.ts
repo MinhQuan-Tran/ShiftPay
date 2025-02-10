@@ -1,4 +1,10 @@
-import { Duration } from '@/classes';
+import { Duration, Entry } from '@/classes';
+
+export type EntryTemplates = {
+  [name: string]: {
+    entry: Entry;
+  };
+};
 
 export type WorkInfos = {
   [workplace: string]: {

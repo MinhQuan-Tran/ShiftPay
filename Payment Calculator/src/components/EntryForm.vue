@@ -11,6 +11,10 @@ import InputLabel from './InputLabel.vue';
 
 export default {
   props: {
+    selectedDate: {
+      type: Date,
+      required: true
+    },
     entry: {
       type: Object as () => Partial<Entry>,
       default: () => ({}) as Partial<Entry>
@@ -24,12 +28,16 @@ export default {
   data() {
     return {
       formData: deepClone<Partial<Entry>>(this.entry),
-      hiddenElements: [] as Element[]
+      saveEntryTemplate: false,
+      deleteEntryTemplate: false,
+      recurringEntry: false,
+      entryName: '',
+      hiddenElements: [] as Element[] // Elements to hide when holding a button in action bar
     };
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['entries', 'checkInTime', 'prevWorkInfos'])
+    ...mapWritableState(useUserDataStore, ['entries', 'checkInTime', 'prevWorkInfos', 'entryTemplates'])
   },
 
   emits: {
@@ -45,6 +53,34 @@ export default {
       alert(message);
     },
 
+    quickAddEntry(entry: Entry) {
+      const newEntry = new Entry(
+        this.entries.length + 1,
+        entry.workplace,
+        entry.payRate,
+        new Date(entry.from),
+        new Date(entry.to),
+        deepClone(entry.unpaidBreaks) as Duration[]
+      );
+
+      const duration = newEntry.to.getTime() - newEntry.from.getTime();
+
+      newEntry.from.setFullYear(
+        this.selectedDate.getFullYear(),
+        this.selectedDate.getMonth(),
+        this.selectedDate.getDate()
+      );
+      newEntry.to.setTime(newEntry.from.getTime() + duration);
+
+      this.entries.push(newEntry);
+
+      const form = this.$refs.entryForm as HTMLFormElement;
+      form.reset();
+
+      const dialog = form.closest('dialog') as HTMLDialogElement;
+      dialog?.close();
+    },
+
     entryAction(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
@@ -52,59 +88,100 @@ export default {
 
       let entry: Entry;
 
-      try {
-        entry = new Entry(
-          action === 'edit' ? this.formData.id! : 0,
-          this.formData.workplace!,
-          this.formData.payRate!,
-          this.formData.from!,
-          this.formData.to!,
-          this.formData.unpaidBreaks
-            ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
-            .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
-        );
-      } catch (error) {
-        alert('Invalid entry');
-        console.log(this.formData);
-        throw new Error('Invalid entry' + error);
+      if (['add', 'check in', 'edit'].includes(action)) {
+        try {
+          entry = new Entry(
+            action === 'edit' ? this.formData.id! : 0,
+            this.formData.workplace!,
+            this.formData.payRate!,
+            new Date(this.formData.from!),
+            new Date(this.formData.to!),
+            this.formData.unpaidBreaks
+              ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
+              .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
+          );
+
+          if (this.saveEntryTemplate) {
+            this.entryTemplates[this.entryName] = {
+              entry: entry
+            };
+          }
+        } catch (error) {
+          alert('Invalid entry');
+          console.error(this.formData);
+          throw new Error('Invalid entry: ' + error);
+        }
       }
 
       switch (action) {
         case 'add':
-        case 'check in':
-          entry.id = this.entries.length + 1;
+        case 'check in': {
+          const recurringDay = Number((this.$refs['recurring-day'] as HTMLInputElement)?.value);
+          const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
+          const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
+          const recurringEndDate = new Date(
+            (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? entry!.from
+          );
 
-          this.entries.push(entry);
+          recurringEndDate.setHours(23, 59, 59, 999);
 
-          if (entry.workplace in this.prevWorkInfos && this.prevWorkInfos[entry.workplace].payRate instanceof Set) {
-            this.prevWorkInfos[entry.workplace].payRate.add(Number(entry.payRate));
+          console.log(recurringDay, recurringMonth, recurringYear, recurringEndDate);
+
+          for (
+            const currentFromDate = new Date(entry!.from);
+            currentFromDate < recurringEndDate;
+            currentFromDate.setDate(currentFromDate.getDate() + recurringDay),
+              currentFromDate.setMonth(currentFromDate.getMonth() + recurringMonth),
+              currentFromDate.setFullYear(currentFromDate.getFullYear() + recurringYear)
+          ) {
+            const recurringEntry = new Entry(
+              this.entries.length + 1,
+              entry!.workplace,
+              entry!.payRate,
+              new Date(currentFromDate),
+              // entry!.to.getTime() - entry!.from.getTime() is the duration of the entry
+              new Date(currentFromDate.getTime() + entry!.to.getTime() - entry!.from.getTime()),
+              deepClone(entry!.unpaidBreaks) as Duration[]
+            );
+
+            this.entries.push(recurringEntry);
+          }
+
+          // Add workplace and pay rate to prevWorkInfos
+          if (entry!.workplace in this.prevWorkInfos && this.prevWorkInfos[entry!.workplace].payRate instanceof Set) {
+            this.prevWorkInfos[entry!.workplace].payRate.add(Number(entry!.payRate));
           } else {
-            this.prevWorkInfos[entry.workplace] = {
-              payRate: new Set<number>([Number(entry.payRate)])
+            this.prevWorkInfos[entry!.workplace] = {
+              payRate: new Set<number>([Number(entry!.payRate)])
             };
           }
 
+          // Remove check in time
           if (action === 'check in') {
             this.checkInTime = undefined;
           }
 
           break;
+        }
 
         case 'edit':
           this.entries.splice(
             this.entries.findIndex((e) => e.id === entry.id),
             1,
-            entry
+            entry!
           );
           break;
 
         case 'delete':
-          this.formData?.id
-            ? this.entries.splice(
-                this.entries.findIndex((e) => e.id === this.formData!.id),
-                1
-              )
-            : alert('Invalid entry');
+          if (!this.formData || !this.formData.id) {
+            alert('Invalid entry');
+            throw new Error('Invalid entry');
+          }
+
+          this.entries.splice(
+            this.entries.findIndex((e) => e.id === this.formData!.id),
+            1
+          );
           break;
 
         case 'remove check in':
@@ -123,7 +200,10 @@ export default {
     },
 
     resetForm() {
-      this.formData = deepClone<Partial<Entry>>(this.entry);
+      // https://stackoverflow.com/a/50854892
+      if (this.$options.data) {
+        Object.assign(this.$data, (this.$options.data as any).call(this, this));
+      }
     },
 
     focusButtonConfirm(isHolding: boolean) {
@@ -177,10 +257,49 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent="entryAction" @reset.prevent="resetForm">
+  <form @submit.prevent="entryAction" @reset.prevent="resetForm" ref="entryForm">
     <input type="hidden" name="id" v-model="formData.id" />
 
-    <InputLabel label="Workplace">
+    <InputLabel
+      label-text="Entry Templates"
+      v-if="action === 'add'"
+      v-model:toggle-value="deleteEntryTemplate"
+      toggle-color="var(--danger-color)"
+      sub-text="Delete"
+    >
+      <div class="entry-templates">
+        <button
+          v-for="(template, name) in entryTemplates"
+          :key="name"
+          @click="deleteEntryTemplate ? delete entryTemplates[name] : quickAddEntry(template.entry)"
+          type="button"
+          class="entry-info"
+        >
+          <div class="name">{{ name }}</div>
+        </button>
+        <button
+          type="button"
+          :class="['entry-info', { active: saveEntryTemplate }]"
+          id="save-entry-template-btn"
+          @click="saveEntryTemplate = !saveEntryTemplate"
+        >
+          <div class="name">&nbsp;+&nbsp;</div>
+        </button>
+      </div>
+    </InputLabel>
+
+    <InputLabel label-text="Entry Name" for-id="entry-name" v-if="saveEntryTemplate">
+      <input
+        type="text"
+        id="entry-name"
+        name="entryName"
+        placeholder="e.g. McDonald | Delivery"
+        v-model="entryName"
+        required
+      />
+    </InputLabel>
+
+    <InputLabel label-text="Workplace" for-id="workplace">
       <ComboBox
         :value="formData?.workplace || ''"
         @update:value="(newValue) => (formData.workplace = newValue)"
@@ -192,14 +311,14 @@ export default {
           type="text"
           id="workplace"
           name="workplace"
-          placeholder="e.g. Restaurant Name"
+          placeholder="e.g. Company Name"
           v-model="formData.workplace"
           required
         />
       </ComboBox>
     </InputLabel>
 
-    <InputLabel label="Pay Rate">
+    <InputLabel label-text="Pay Rate" for-id="pay-rate">
       <ComboBox
         :value="formData.payRate ? formData.payRate.toString() : ''"
         @update:value="(newValue: number | undefined) => (formData.payRate = Number(newValue))"
@@ -225,7 +344,7 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel label="From">
+    <InputLabel label-text="From" for-id="from">
       <input
         type="datetime-local"
         id="from"
@@ -243,7 +362,7 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel label="To">
+    <InputLabel label-text="To" for-id="to">
       <input
         type="datetime-local"
         id="to"
@@ -255,77 +374,109 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel label="Unpaid Break(s)">
-      <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
-        <!-- Hours -->
-        <ComboBox
-          :value="unpaidBreak.hours?.toString()"
-          @update:value="
-            (hours) => {
-              !isNaN(Number(hours))
-                ? (formData.unpaidBreaks![index].hours = Number(hours))
-                : alert('Invalid input: Please enter a valid number.');
-            }
-          "
-          :list="[...Array((formData.billableDuration?.hours ?? 0) + 1).keys()].map(String)"
-        >
-          <input
-            type="number"
-            name="unpaidBreak-hours"
-            placeholder="hours"
-            :value="formData.unpaidBreaks![index].hours > 0 ? formData.unpaidBreaks![index].hours : ''"
-            @input="
-              (event) => {
-                const value = Number((event.target as HTMLInputElement).value);
-                formData.unpaidBreaks![index].hours = Math.min(value, 24);
+    <InputLabel label-text="Unpaid Break(s)" for-id="unpaid-breaks">
+      <div class="unpaid-breaks">
+        <div v-for="(unpaidBreak, index) in formData.unpaidBreaks" :key="index" class="unpaid-break">
+          <!-- Hours -->
+          <ComboBox
+            @update:value="
+              (hours) => {
+                !isNaN(Number(hours))
+                  ? (formData.unpaidBreaks![index].hours = Number(hours))
+                  : alert('Invalid input: Please enter a valid number.');
               }
             "
-            step="1"
-            min="0"
-            max="24"
-          />
-        </ComboBox>
+            :list="[...Array((formData.billableDuration?.hours ?? 0) + 1).keys()].map(String)"
+          >
+            <input
+              type="number"
+              name="unpaidBreak-hours"
+              placeholder="hours"
+              :value="formData.unpaidBreaks![index].hours > 0 ? formData.unpaidBreaks![index].hours : ''"
+              @input="
+                (event) => {
+                  const value = Number((event.target as HTMLInputElement).value);
+                  formData.unpaidBreaks![index].hours = Math.min(value, 24);
+                }
+              "
+              step="1"
+              min="0"
+              max="24"
+            />
+          </ComboBox>
 
-        <!-- Minutes (0, 15, 30, 45) -->
-        <ComboBox
-          :value="unpaidBreak.minutes?.toString()"
-          @update:value="
-            (minutes) => {
-              !isNaN(Number(minutes))
-                ? (formData.unpaidBreaks![index].minutes = Number(minutes))
-                : alert('Invalid input: Please enter a valid number.');
-            }
-          "
-          :list="[...Array(4).keys()].map((i) => (i * 15).toString())"
-        >
-          <input
-            type="number"
-            name="unpaidBreak-minutes"
-            placeholder="minutes"
-            :value="formData.unpaidBreaks![index].minutes > 0 ? formData.unpaidBreaks![index].minutes : ''"
-            @input="
-              (event) => {
-                const value = Number((event.target as HTMLInputElement).value);
-                formData.unpaidBreaks![index].minutes = Math.min(value, 59);
+          <!-- Minutes (0, 15, 30, 45) -->
+          <ComboBox
+            @update:value="
+              (minutes) => {
+                !isNaN(Number(minutes))
+                  ? (formData.unpaidBreaks![index].minutes = Number(minutes))
+                  : alert('Invalid input: Please enter a valid number.');
               }
             "
-            step="1"
-            min="0"
-            max="59"
-          />
-        </ComboBox>
+            :list="[...Array(4).keys()].map((i) => (i * 15).toString())"
+          >
+            <input
+              type="number"
+              name="unpaidBreak-minutes"
+              placeholder="minutes"
+              :value="formData.unpaidBreaks![index].minutes > 0 ? formData.unpaidBreaks![index].minutes : ''"
+              @input="
+                (event) => {
+                  const value = Number((event.target as HTMLInputElement).value);
+                  formData.unpaidBreaks![index].minutes = Math.min(value, 59);
+                }
+              "
+              step="1"
+              min="0"
+              max="59"
+            />
+          </ComboBox>
 
-        <!-- Delete unpaid break -->
-        <button class="delete-btn danger" type="button" @click="formData.unpaidBreaks?.splice(index, 1)">
-          <div class="icons8-close"></div>
-        </button>
+          <!-- Delete unpaid break -->
+          <button class="delete-btn danger" type="button" @click="formData.unpaidBreaks?.splice(index, 1)">
+            <div class="icons8-close"></div>
+          </button>
+        </div>
+
+        <!-- Add unpaid break -->
+        <button type="button" @click="addUnpaidBreak">+</button>
       </div>
+    </InputLabel>
 
-      <!-- Add unpaid break -->
-      <button type="button" @click="addUnpaidBreak">+</button>
+    <InputLabel
+      v-if="action === 'add' || action === 'check in/out'"
+      label-text="Recurring?"
+      for-id="recurring"
+      v-model:toggle-value="recurringEntry"
+    >
+      <div v-if="recurringEntry" class="recurring-inputs">
+        <span>Entry repeat every:</span>
+        <input
+          type="number"
+          ref="recurring-day"
+          id="recurring-day"
+          name="recurringDay"
+          placeholder="Day"
+          min="0"
+          max="31"
+        />
+        <input
+          type="number"
+          ref="recurring-month"
+          id="recurring-month"
+          name="recurringMonth"
+          placeholder="Month"
+          min="0"
+          max="12"
+        />
+        <input type="number" ref="recurring-year" id="recurring-year" name="recurringYear" placeholder="Year" min="0" />
+        <input type="date" ref="recurring-end-date" id="recurring-end-date" name="recurringEndDate" required />
+      </div>
     </InputLabel>
 
     <div ref="actionBar" class="actions">
+      <!-- Edit -->
       <template v-if="action == 'edit'">
         <ButtonConfirm
           @is-holding="focusButtonConfirm"
@@ -333,47 +484,81 @@ export default {
           name="action"
           value="delete"
           class="danger"
+          id="delete-entry-btn"
           formnovalidate
         >
           Delete
         </ButtonConfirm>
-        <button type="submit" name="action" value="edit" class="warning">Edit Entry</button>
+        <button type="submit" name="action" value="edit" class="warning" id="edit-entry-btn">Edit Entry</button>
       </template>
 
-      <template v-else-if="action == 'add'">
-        <button type="submit" name="action" value="add" class="primary">Add Entry</button>
-      </template>
-
-      <template v-else-if="action == 'check in/out'">
+      <!-- Add, Check in/out -->
+      <template v-else>
         <ButtonConfirm
+          v-if="action == 'check in/out'"
           @is-holding="focusButtonConfirm"
           type="submit"
           name="action"
           value="remove check in"
           class="danger"
+          id="remove-check-in-out-btn"
           formnovalidate
         >
           Remove
         </ButtonConfirm>
-        <button type="submit" name="action" value="check in" class="primary">Add Entry</button>
+
+        <button
+          type="submit"
+          name="action"
+          value="add"
+          :class="['primary', { active: saveEntryTemplate }]"
+          id="add-entry-btn"
+        >
+          {{ saveEntryTemplate ? 'Save & ' : '' }}Add Entry
+        </button>
       </template>
     </div>
   </form>
 </template>
 
 <style scoped>
+form {
+  gap: calc(var(--padding) * 1.5);
+}
+
+.entry-templates {
+  position: relative;
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap; /* Prevent wrapping */
+  gap: var(--padding-small);
+  padding: var(--padding-small);
+}
+
+.entry-templates .entry-info {
+  flex: 0 0 auto; /* Prevent buttons from shrinking or growing */
+  background-color: var(--input-background-color);
+  min-width: 80px;
+}
+
+#save-entry-template-btn.active,
+#add-entry-btn.active {
+  background-color: var(--success-color) !important;
+  color: var(--text-color-black);
+}
+
 .actions {
-  transition: gap 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .actions > * {
   max-width: 100%;
   overflow: hidden;
-  transition: max-width 0.3s ease;
 }
 
 .actions button {
   flex: 1;
+  transition: all 0.3s ease;
 }
 
 .actions .danger {
@@ -387,6 +572,13 @@ export default {
 .hide {
   max-width: 0;
   padding: 0;
+}
+
+.unpaid-breaks {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--padding-small);
 }
 
 .unpaid-break {
@@ -404,5 +596,36 @@ export default {
 .unpaid-break .delete-btn {
   flex-grow: 0;
   box-sizing: border-box;
+}
+
+.recurring-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    'text text text text'
+    'day month year year'
+    'end-date end-date end-date end-date';
+  gap: var(--padding-small);
+}
+
+.recurring-inputs span {
+  grid-area: text;
+}
+
+.recurring-inputs input#recurring-day {
+  grid-area: day;
+}
+
+.recurring-inputs input#recurring-month {
+  grid-area: month;
+}
+
+.recurring-inputs input#recurring-year {
+  grid-area: year;
+}
+
+.recurring-inputs input#recurring-end-date {
+  grid-area: end-date;
 }
 </style>

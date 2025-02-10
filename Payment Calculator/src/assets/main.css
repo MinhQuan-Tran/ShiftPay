@@ -2,7 +2,7 @@
   font-family: Arial, Helvetica, sans-serif;
   color-scheme: light dark;
 
-  --primary-color: #82d2fd;
+  --primary-color: #47acff;
   --warning-color: #ffff00;
   --danger-color: #ff6464;
   --success-color: #64ff64;
@@ -10,7 +10,7 @@
   --background-color: light-dark(#fafafa, #272727);
   --popup-background-color: light-dark(#fff, #303030);
   --input-background-color: light-dark(#f0f0f0, #414141);
-  --button-color: light-dark(#ededed, #686868);
+  --button-color: light-dark(#ededed, #545454);
   --text-color-white: #fff;
   --text-color-black: #000;
   --text-color: light-dark(var(--text-color-black), var(--text-color-white));
@@ -38,6 +38,10 @@ body {
   width: 99vw;
 }
 
+body > * {
+  background: transparent;
+}
+
 form {
   display: flex;
   flex-direction: column;
@@ -57,13 +61,10 @@ input:not([type='checkbox'], [type='radio']) {
   padding: var(--padding);
 }
 
-input:focus {
+input:focus,
+button:focus {
+  transition: outline 0s;
   outline: 2px solid var(--primary-color);
-}
-
-label {
-  margin-bottom: 0.2em;
-  margin-left: var(--border-radius);
 }
 
 button {
@@ -131,7 +132,7 @@ button.danger {
 .inline-icon {
   height: 1.3em;
   width: 1.3em;
-  vertical-align: middle;
+  vertical-align: sub;
 }
 
 form .actions {

@@ -69,7 +69,7 @@ export default {
 
         const entries = getEntries(this.userDataStore.entries as Array<Entry>, from, to);
 
-        week.summaries.income += entries.reduce((acc, entry) => (acc += entry.income), 0);
+        week.summaries.income += entries.reduce((acc, entry) => (acc += entry.income ?? 0), 0);
 
         week.summaries.totalHours = entries.reduce(
           (acc, entry) => {
