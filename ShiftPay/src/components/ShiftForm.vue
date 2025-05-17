@@ -1,5 +1,6 @@
 <script lang="ts">
-import { Shift, Duration } from '@/classes';
+import Shift from '@/models/Shift';
+import Duration from '@/models/Duration';
 import { deepClone } from '@/utils';
 
 import { mapWritableState } from 'pinia';

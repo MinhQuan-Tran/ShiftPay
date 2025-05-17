@@ -1,14 +1,14 @@
 <script lang="ts">
 import Shift from '@/models/Shift';
-import { currencyFormat, toTimeStr, getEntries } from '@/utils';
+import { currencyFormat, toTimeStr, getShifts } from '@/utils';
 
 import { mapStores } from 'pinia';
 import { useUserDataStore } from '@/stores/userData';
 
-import DayScheduleEntry from '@/components/DayScheduleEntry.vue';
+import DayScheduleShift from '@/components/DayScheduleShift.vue';
 import BaseDialog from '@/components/BaseDialog.vue';
-import ClearEntriesForm from '@/components/ClearEntriesForm.vue';
-import EntryForm from '@/components/EntryForm.vue';
+import ClearShiftsForm from '@/components/ClearShiftsForm.vue';
+import ShiftForm from '@/components/ShiftForm.vue';
 
 export default {
   props: {
@@ -43,7 +43,7 @@ export default {
     currencyFormat,
     toTimeStr,
 
-    handleEditEntry(shift: Shift) {
+    handleEditShift(shift: Shift) {
       this.selectedShift = shift;
       this.shiftFormData = {
         title: 'Edit Shift',
@@ -91,7 +91,7 @@ export default {
       (this.$refs.shiftDialog as any).showModal();
     },
 
-    handleAddEntry() {
+    handleAddShift() {
       this.shiftFormData = {
         title: 'Add Shift',
         resetForm: false,
@@ -133,7 +133,7 @@ export default {
 
       this.$forceUpdate();
 
-      return getEntries(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
+      return getShifts(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
     }
   },
   mounted() {
@@ -142,14 +142,14 @@ export default {
   updated() {
     this.updateTimeWidth();
   },
-  components: { DayScheduleEntry, BaseDialog, ClearEntriesForm, EntryForm }
+  components: { DayScheduleShift, BaseDialog, ClearShiftsForm, ShiftForm }
 };
 </script>
 
 <template>
   <div class="day-schedule">
     <div class="actions">
-      <button @click="($refs.clearEntriesDialog as any).showModal()" class="danger" id="clear-btn">Clear</button>
+      <button @click="($refs.clearShiftsDialog as any).showModal()" class="danger" id="clear-btn">Clear</button>
 
       <Transition>
         <button
@@ -162,11 +162,11 @@ export default {
         </button>
       </Transition>
 
-      <button @click="handleAddEntry" class="success" id="add-btn">Add Shift</button>
+      <button @click="handleAddShift" class="success" id="add-btn">Add Shift</button>
     </div>
 
     <div class="shift-list">
-      <DayScheduleEntry
+      <DayScheduleShift
         v-for="shift in shifts!.sort((a: Shift, b: Shift) => {
           // Sort by startTime, then by endTime
           return a.startTime.getTime() - b.startTime.getTime() || a.endTime.getTime() - b.endTime.getTime();
@@ -174,7 +174,7 @@ export default {
         :key="shift.id"
         :shift="shift"
         :selected-date="selectedDate"
-        @edit-shift="handleEditEntry"
+        @edit-shift="handleEditShift"
       />
     </div>
 
@@ -185,11 +185,11 @@ export default {
       class="danger"
       :reset-forms="true"
     >
-      <ClearEntriesForm :selected-date="selectedDate" />
+      <ClearShiftsForm :selected-date="selectedDate" />
     </BaseDialog>
 
     <BaseDialog ref="shiftDialog" :title="shiftFormData.title" :reset-forms="shiftFormData.resetForm">
-      <EntryForm :selected-date="selectedDate" :shift="shiftFormData.placeholderShift" :action="shiftFormData.action" />
+      <ShiftForm :selected-date="selectedDate" :shift="shiftFormData.placeholderShift" :action="shiftFormData.action" />
     </BaseDialog>
   </div>
 </template>

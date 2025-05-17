@@ -13,7 +13,7 @@ export function toTimeStr(date: Date): string {
   });
 }
 
-export function getEntries(shifts: Array<Shift>, startTime: Date, endTime: Date): Shift[] {
+export function getShifts(shifts: Array<Shift>, startTime: Date, endTime: Date): Shift[] {
   // Filter shifts for the given date
   return shifts.filter((shift) => {
     // Including the ones with 'startTime' in the past and 'endTime' in the future

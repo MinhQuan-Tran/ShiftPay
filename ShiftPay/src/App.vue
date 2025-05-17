@@ -65,7 +65,7 @@ export default {
     window.addEventListener('storage', this.userDataStore.handleStorageChange);
 
     // Run once when mounted
-    Object.shifts(this.userDataStore.$state).forEach(([key, value]) => {
+    Object.entries(this.userDataStore.$state).forEach(([key, value]) => {
       // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
       this.userDataStore.saveToLocalStorage(key, value);
     });

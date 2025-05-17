@@ -2,7 +2,7 @@
 import Duration from '@/models/Duration';
 import Shift from '@/models/Shift';
 import type { Week, Day } from '@/types';
-import { currencyFormat, getEntries } from '@/utils';
+import { currencyFormat, getShifts } from '@/utils';
 
 import { mapStores } from 'pinia';
 import { useUserDataStore } from '@/stores/userData';
@@ -68,7 +68,7 @@ export default {
         endTime.setDate(endTime.getDate() + 7);
         endTime.setHours(0, 0, 0, 0);
 
-        const shifts = getEntries(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
+        const shifts = getShifts(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
 
         week.summaries.income += shifts.reduce((acc, shift) => (acc += shift.income ?? 0), 0);
 
@@ -111,7 +111,7 @@ export default {
   },
   methods: {
     currencyFormat,
-    getEntries,
+    getShifts,
 
     updateTitleByMonth() {
       const date = new Date(this.today);
@@ -184,13 +184,13 @@ export default {
                 // Compare the dates only
                 selected: selectedDate && selectedDate.getTime() === day.dayStartTime.getTime(),
                 'has-shift':
-                  getEntries(userDataStore.shifts as Array<Shift>, day.dayStartTime, day.dayEndTime).length > 0,
-                'has-shift-past': getEntries(
+                  getShifts(userDataStore.shifts as Array<Shift>, day.dayStartTime, day.dayEndTime).length > 0,
+                'has-shift-past': getShifts(
                   userDataStore.shifts as Array<Shift>,
                   day.dayStartTime,
                   day.dayEndTime
                 ).some((shift) => new Date(shift.startTime) < day.dayStartTime),
-                'has-shift-future': getEntries(
+                'has-shift-future': getShifts(
                   userDataStore.shifts as Array<Shift>,
                   day.dayStartTime,
                   day.dayEndTime
