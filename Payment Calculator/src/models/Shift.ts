@@ -1,94 +1,26 @@
-export class Duration {
-  private _hours?: number;
-  private _minutes?: number;
+import Duration from '@/models/Duration';
 
-  constructor(props?: { hours?: number; minutes?: number; from?: Date; to?: Date }) {
-    const { hours, minutes, from, to } = props ?? {};
-
-    if (hours !== undefined) {
-      this.hours = hours;
-    }
-
-    if (minutes !== undefined) {
-      this.minutes = minutes;
-    }
-
-    if (from !== undefined && to !== undefined) {
-      const duration = to.getTime() - from.getTime();
-
-      // minutes automatically added to hours
-      this.minutes = Math.floor(duration / (1000 * 60));
-
-      return;
-    }
-  }
-
-  get hours(): number {
-    return this._hours ?? 0;
-  }
-
-  get minutes(): number {
-    return this._minutes ?? 0;
-  }
-
-  set hours(hours: number | undefined) {
-    if (hours === undefined) {
-      this._hours = undefined;
-      return;
-    }
-
-    if (Number(hours) < 0) {
-      throw new Error('Hours cannot be negative');
-    }
-
-    if (!Number.isInteger(Number(hours))) {
-      throw new Error('Hours should be an integer');
-    }
-
-    this._hours = Number(hours);
-  }
-
-  set minutes(minutes: number | undefined) {
-    if (Number(minutes) < 0) {
-      throw new Error('Minutes cannot be negative');
-    }
-
-    if (!Number.isInteger(Number(minutes))) {
-      throw new Error('Minutes should be an integer');
-    }
-
-    this._hours ??= 0;
-    this._hours += Math.floor(Number(minutes) / 60);
-    this._minutes = Number(minutes) % 60;
-  }
-
-  format(style: string = 'narrow', hoursDisplay: string = 'auto'): string {
-    if (!this._hours && !this._minutes) {
-      hoursDisplay = 'always';
-    }
-
-    // @ts-ignore: DurationFormat is not yet supported
-    return new Intl.DurationFormat([], {
-      style: style,
-      hoursDisplay: hoursDisplay
-    }).format(this);
-  }
-}
-
-export class Entry {
+export default class Shift {
   private _id: number = 0;
   private _workplace: string = '';
   private _payRate: number = 0;
-  private _from: Date = new Date();
-  private _to: Date = new Date();
+  private _startTime: Date = new Date();
+  private _endTime: Date = new Date();
   private _unpaidBreaks: Duration[] = [];
 
-  constructor(id: number, workplace: string, payRate: number, from: Date, to: Date, unpaidBreaks: Duration[]) {
+  constructor(
+    id: number,
+    workplace: string,
+    payRate: number,
+    startTime: Date,
+    endTime: Date,
+    unpaidBreaks: Duration[]
+  ) {
     this.id = id;
     this.workplace = workplace;
     this.payRate = payRate;
-    this.from = from;
-    this.to = to;
+    this.startTime = startTime;
+    this.endTime = endTime;
     this.unpaidBreaks = unpaidBreaks;
   }
 
@@ -104,12 +36,12 @@ export class Entry {
     return this._payRate;
   }
 
-  get from(): Date {
-    return this._from;
+  get startTime(): Date {
+    return this._startTime;
   }
 
-  get to(): Date {
-    return this._to;
+  get endTime(): Date {
+    return this._endTime;
   }
 
   get unpaidBreaks(): Duration[] {
@@ -117,7 +49,7 @@ export class Entry {
   }
 
   get duration(): Duration {
-    const workTime = this.to.getTime() - this.from.getTime();
+    const workTime = this.endTime.getTime() - this.startTime.getTime();
 
     const workHours = Math.floor(workTime / (1000 * 60 * 60));
     const workMinutes = Math.floor((workTime % (1000 * 60 * 60)) / (1000 * 60));
@@ -185,24 +117,24 @@ export class Entry {
     this._payRate = payRate;
   }
 
-  set from(from: Date) {
-    if (isNaN(Date.parse(from as any))) {
+  set startTime(startTime: Date) {
+    if (isNaN(Date.parse(startTime as any))) {
       throw new Error('Invalid date');
     }
 
-    this._from = new Date(from);
+    this._startTime = new Date(startTime);
   }
 
-  set to(to: Date) {
-    if (isNaN(Date.parse(to as any))) {
+  set endTime(endTime: Date) {
+    if (isNaN(Date.parse(endTime as any))) {
       throw new Error('Invalid date');
     }
 
-    if (this.from > to) {
+    if (this.startTime > endTime) {
       throw new Error('End date cannot be before the start date');
     }
 
-    this._to = new Date(to);
+    this._endTime = new Date(endTime);
   }
 
   set unpaidBreaks(unpaidBreaks: Duration[]) {
@@ -214,8 +146,8 @@ export class Entry {
   }
 
   limitedDuration(fromLimit?: Date, toLimit?: Date): Duration {
-    const fromDate = fromLimit && this.from < fromLimit ? fromLimit : new Date(this.from);
-    const toDate = toLimit && this.to > toLimit ? toLimit : new Date(this.to);
+    const fromDate = fromLimit && this.startTime < fromLimit ? fromLimit : new Date(this.startTime);
+    const toDate = toLimit && this.endTime > toLimit ? toLimit : new Date(this.endTime);
 
     const workTime = toDate.getTime() - fromDate.getTime();
 

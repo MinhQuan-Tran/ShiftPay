@@ -1,32 +1,34 @@
 import { defineStore } from 'pinia';
 import type { EntryTemplates, WorkInfos } from '@/types';
-import { Duration, Entry } from '@/classes';
+import Duration from '@/models/Duration';
+import Shift from '@/models/Shift';
 
 export const useUserDataStore = defineStore('userData', {
   state: () => ({
-    // entries: [] as Array<Entry>,
-    entries: (localStorage.getItem('entries')
-      ? JSON.parse(localStorage.getItem('entries')!)
-          .filter((entry: any) => entry !== null)
-          .map((entry: any) => {
+    // shifts: [] as Array<Shift>,
+    shifts: (localStorage.getItem('shifts')
+      ? JSON.parse(localStorage.getItem('shifts')!)
+          .map((shift: any) => {
             try {
-              // entry.id will be converted to entry._id when saved to localStorage
-              return new Entry(
-                entry.id || entry._id,
-                entry.workplace || entry._workplace,
-                entry.payRate || entry._payRate,
-                new Date(entry.from || entry._from),
-                new Date(entry.to || entry._to),
-                entry.unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
-                  entry._unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
+              // shift.id will be converted to shift._id when saved to localStorage
+              return new Shift(
+                shift.id || shift._id,
+                shift.workplace || shift._workplace,
+                shift.payRate || shift._payRate,
+                new Date(shift.from || shift._from),
+                new Date(shift.to || shift._to),
+                shift.unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
+                  shift._unpaidBreaks?.map((breakTime: any) => Object.assign(new Duration(), breakTime)) ??
                   []
               );
             } catch (error) {
-              console.error('Failed to parse entry:', entry);
+              console.error('Failed to parse shift:', shift);
               console.error('Error:', error);
+              return null;
             }
           })
-      : []) as Array<Entry>,
+          .filter((shift: any) => shift !== null)
+      : []) as Array<Shift>,
 
     // checkInTime: Date | undefined,
     checkInTime: (localStorage.getItem('checkInTime')
@@ -44,12 +46,12 @@ export const useUserDataStore = defineStore('userData', {
         })
       : {}) as WorkInfos,
 
-    // entryTemplates: EntryTemplates,
-    entryTemplates: (localStorage.getItem('entryTemplates') &&
-    !Array.isArray(JSON.parse(localStorage.getItem('entryTemplates')!))
-      ? JSON.parse(localStorage.getItem('entryTemplates')!, (key, value) => {
-          if (key === 'entry') {
-            return new Entry(
+    // shiftTemplates: EntryTemplates,
+    shiftTemplates: (localStorage.getItem('shiftTemplates') &&
+    !Array.isArray(JSON.parse(localStorage.getItem('shiftTemplates')!))
+      ? JSON.parse(localStorage.getItem('shiftTemplates')!, (key, value) => {
+          if (key === 'shift') {
+            return new Shift(
               value.id || value._id,
               value.workplace || value._workplace,
               value.payRate || value._payRate,
@@ -66,46 +68,6 @@ export const useUserDataStore = defineStore('userData', {
   }),
 
   actions: {
-    // fixState(key: string, value: any) {
-    //   console.log(`Fixing ${key}`, value);
-
-    //   // values may be null or NaN instead of undefined
-    //   // invalid values will turn into undefined
-    //   switch (key) {
-    //     case 'entries':
-    //       return value.map((entry: Entry) => ({
-    //         ...entry,
-    //         payRate: entry.payRate ? Number(entry.payRate) : undefined,
-    //         from: entry.from ? new Date(entry.from) : undefined,
-    //         to: entry.to ? new Date(entry.to) : undefined,
-    //         unpaidBreaks: (entry.unpaidBreaks?.map((breakTime: Duration) => ({
-    //           hours: breakTime.hours ? Number(breakTime.hours) : undefined,
-    //           minutes: breakTime.minutes ? Number(breakTime.minutes) : undefined
-    //         })) || []) as Duration[]
-    //       }));
-
-    //     case 'checkInTime':
-    //       return value ? new Date(value) : undefined;
-
-    //     case 'prevWorkInfos':
-    //       for (const workplace in value) {
-    //         if (!(value[workplace].payRate instanceof Array || value[workplace].payRate instanceof Set)) {
-    //           console.log(`${workplace}'s pay rate is invalid`);
-    //           if (confirm(`${workplace}'s pay rate is invalid. Reset?`)) {
-    //             console.log(`Resetting ${workplace}'s pay rate`);
-    //             value[workplace].payRate = new Set<number>([]);
-    //           }
-    //         }
-
-    //         if (value[workplace].payRate instanceof Array) {
-    //           value[workplace].payRate = new Set<number>([...value[workplace].payRate].map((rate) => Number(rate)));
-    //         }
-    //       }
-    //       return value;
-    //   }
-    //   return value;
-    // },
-
     saveToLocalStorage(key: string, value: any) {
       if (value === undefined) {
         console.log(`Removing ${key}`);
@@ -120,8 +82,6 @@ export const useUserDataStore = defineStore('userData', {
     },
 
     handleStorageChange(event: any) {
-      // if (!this.keys().has(event.key)) return;
-
       console.log(
         `Storage change detected: [${event.key}]:\n\nOld value:\n${event.oldValue}\n\nNew value:\n${event.newValue}`
       );

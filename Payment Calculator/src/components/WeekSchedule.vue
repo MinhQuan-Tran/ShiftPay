@@ -1,5 +1,6 @@
 <script lang="ts">
-import { Entry, Duration } from '@/classes';
+import Duration from '@/models/Duration';
+import Shift from '@/models/Shift';
 import type { Week, Day } from '@/types';
 import { currencyFormat, getEntries } from '@/utils';
 
@@ -59,22 +60,22 @@ export default {
         } as Week;
 
         // from 12am on Monday
-        const from = new Date(currentDate);
-        from.setHours(0, 0, 0, 0);
+        const startTime = new Date(currentDate);
+        startTime.setHours(0, 0, 0, 0);
 
         // to 12am on the next Monday
-        const to = new Date(currentDate);
-        to.setDate(to.getDate() + 7);
-        to.setHours(0, 0, 0, 0);
+        const endTime = new Date(currentDate);
+        endTime.setDate(endTime.getDate() + 7);
+        endTime.setHours(0, 0, 0, 0);
 
-        const entries = getEntries(this.userDataStore.entries as Array<Entry>, from, to);
+        const shifts = getEntries(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
 
-        week.summaries.income += entries.reduce((acc, entry) => (acc += entry.income ?? 0), 0);
+        week.summaries.income += shifts.reduce((acc, shift) => (acc += shift.income ?? 0), 0);
 
-        week.summaries.totalHours = entries.reduce(
-          (acc, entry) => {
-            acc.hours += entry.duration.hours;
-            acc.minutes += entry.duration.minutes;
+        week.summaries.totalHours = shifts.reduce(
+          (acc, shift) => {
+            acc.hours += shift.duration.hours;
+            acc.minutes += shift.duration.minutes;
             return acc;
           },
           new Duration({ hours: 0, minutes: 0 })
@@ -182,18 +183,18 @@ export default {
               {
                 // Compare the dates only
                 selected: selectedDate && selectedDate.getTime() === day.dayStartTime.getTime(),
-                'has-entry':
-                  getEntries(userDataStore.entries as Array<Entry>, day.dayStartTime, day.dayEndTime).length > 0,
-                'has-entry-past': getEntries(
-                  userDataStore.entries as Array<Entry>,
+                'has-shift':
+                  getEntries(userDataStore.shifts as Array<Shift>, day.dayStartTime, day.dayEndTime).length > 0,
+                'has-shift-past': getEntries(
+                  userDataStore.shifts as Array<Shift>,
                   day.dayStartTime,
                   day.dayEndTime
-                ).some((entry) => new Date(entry.from) < day.dayStartTime),
-                'has-entry-future': getEntries(
-                  userDataStore.entries as Array<Entry>,
+                ).some((shift) => new Date(shift.startTime) < day.dayStartTime),
+                'has-shift-future': getEntries(
+                  userDataStore.shifts as Array<Shift>,
                   day.dayStartTime,
                   day.dayEndTime
-                ).some((entry) => day.dayEndTime < new Date(entry.to))
+                ).some((shift) => day.dayEndTime < new Date(shift.endTime))
               }
             ]"
           >
@@ -406,7 +407,7 @@ export default {
   font-weight: bold;
 }
 
-.has-entry::before {
+.has-shift::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -421,12 +422,12 @@ export default {
   background-color: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
 }
 
-.has-entry-past::before {
+.has-shift-past::before {
   left: -50%;
   --add-left-space: v-bind('spaceBetweenDay');
 }
 
-.has-entry-future::before {
+.has-shift-future::before {
   --add-right-space: v-bind('spaceBetweenDay');
 }
 </style>

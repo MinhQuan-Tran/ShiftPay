@@ -1,4 +1,4 @@
-import type { Duration, Entry } from '@/classes';
+import Shift from '@/models/Shift';
 
 export function currencyFormat(value: number): string {
   return Intl.NumberFormat([], {
@@ -13,15 +13,15 @@ export function toTimeStr(date: Date): string {
   });
 }
 
-export function getEntries(entries: Array<Entry>, from: Date, to: Date): Entry[] {
-  // Filter entries for the given date
-  return entries.filter((entry) => {
-    // Including the ones with 'from' in the past and 'to' in the future
+export function getEntries(shifts: Array<Shift>, startTime: Date, endTime: Date): Shift[] {
+  // Filter shifts for the given date
+  return shifts.filter((shift) => {
+    // Including the ones with 'startTime' in the past and 'endTime' in the future
     return (
-      // 'from' is before the next day of the selected date
-      new Date(entry.from) < to &&
-      // 'to' is after the start of the selected date
-      new Date(entry.to) > from
+      // 'startTime' is before the next day of the selected date
+      new Date(shift.startTime) < endTime &&
+      // 'endTime' is after the start of the selected date
+      new Date(shift.endTime) > startTime
     );
   });
 }

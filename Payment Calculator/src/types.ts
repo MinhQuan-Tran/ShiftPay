@@ -1,8 +1,9 @@
-import { Duration, Entry } from '@/classes';
+import Duration from '@/models/Duration';
+import Shift from '@/models/Shift';
 
 export type EntryTemplates = {
   [name: string]: {
-    entry: Entry;
+    shift: Shift;
   };
 };
 

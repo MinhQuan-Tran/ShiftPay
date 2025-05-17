@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Entry } from '@/classes';
+import Shift from '@/models/Shift';
 import { currencyFormat, toTimeStr, getEntries } from '@/utils';
 
 import { mapStores } from 'pinia';
@@ -17,39 +17,41 @@ export default {
       required: true
     }
   },
+
   data() {
     return {
-      selectedEntry: undefined as Entry | undefined,
-      entryFormData: {
-        title: 'Entry',
+      selectedShift: undefined as Shift | undefined,
+      shiftFormData: {
+        title: 'Shift',
         resetForm: true, // Reset the form when the dialog is closed
         action: '',
-        placeholderEntry: undefined as
+        placeholderShift: undefined as
           | {
               id?: number;
               workplace?: string;
               payRate?: number;
-              from?: Date;
-              to?: Date;
+              startTime?: Date;
+              endTime?: Date;
             }
           | undefined
       },
       datetimeWidth: 'auto'
     };
   },
+
   methods: {
     currencyFormat,
     toTimeStr,
 
-    handleEditEntry(entry: Entry) {
-      this.selectedEntry = entry;
-      this.entryFormData = {
-        title: 'Edit Entry',
+    handleEditEntry(shift: Shift) {
+      this.selectedShift = shift;
+      this.shiftFormData = {
+        title: 'Edit Shift',
         resetForm: true,
         action: 'edit',
-        placeholderEntry: this.selectedEntry
+        placeholderShift: this.selectedShift
       };
-      (this.$refs.entryDialog as any).showModal();
+      (this.$refs.shiftDialog as any).showModal();
     },
 
     handleCheckInOut() {
@@ -76,31 +78,31 @@ export default {
       }
 
       // Check out
-      this.entryFormData = {
+      this.shiftFormData = {
         title: 'Check Out',
         resetForm: false,
         action: 'check in/out',
-        placeholderEntry: {
-          from: this.userDataStore.checkInTime,
-          to: new Date()
+        placeholderShift: {
+          startTime: this.userDataStore.checkInTime,
+          endTime: new Date()
         }
       };
 
-      (this.$refs.entryDialog as any).showModal();
+      (this.$refs.shiftDialog as any).showModal();
     },
 
     handleAddEntry() {
-      this.entryFormData = {
-        title: 'Add Entry',
+      this.shiftFormData = {
+        title: 'Add Shift',
         resetForm: false,
         action: 'add',
-        placeholderEntry: {
-          // Set the from and to time to the selected date with the current time
-          from: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes())),
-          to: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes()))
+        placeholderShift: {
+          // Set the startTime and endTime time to the selected date with the current time
+          startTime: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes())),
+          endTime: new Date(new Date(this.selectedDate).setHours(new Date().getHours(), new Date().getMinutes()))
         }
       };
-      (this.$refs.entryDialog as any).showModal();
+      (this.$refs.shiftDialog as any).showModal();
     },
 
     updateTimeWidth() {
@@ -108,7 +110,7 @@ export default {
 
       this.$nextTick(() => {
         this.datetimeWidth =
-          Math.max(...Array.from(document.querySelectorAll('.entry .datetime > *')).map((time) => time.clientWidth)) +
+          Math.max(...Array.from(document.querySelectorAll('.shift .datetime > *')).map((time) => time.clientWidth)) +
           'px';
       });
     }
@@ -119,19 +121,19 @@ export default {
       return this.userDataStore.checkInTime !== undefined;
     },
 
-    entries() {
+    shifts() {
       // from 12am on the given day
-      const from = new Date(this.selectedDate);
-      from.setHours(0, 0, 0, 0);
+      const startTime = new Date(this.selectedDate);
+      startTime.setHours(0, 0, 0, 0);
 
       // to 12am on the next day
-      const to = new Date(this.selectedDate);
-      to.setDate(to.getDate() + 1);
-      to.setHours(0, 0, 0, 0);
+      const endTime = new Date(this.selectedDate);
+      endTime.setDate(endTime.getDate() + 1);
+      endTime.setHours(0, 0, 0, 0);
 
       this.$forceUpdate();
 
-      return getEntries(this.userDataStore.entries as Array<Entry>, from, to);
+      return getEntries(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
     }
   },
   mounted() {
@@ -160,25 +162,25 @@ export default {
         </button>
       </Transition>
 
-      <button @click="handleAddEntry" class="success" id="add-btn">Add Entry</button>
+      <button @click="handleAddEntry" class="success" id="add-btn">Add Shift</button>
     </div>
 
-    <div class="entry-list">
+    <div class="shift-list">
       <DayScheduleEntry
-        v-for="entry in entries!.sort((a: Entry, b: Entry) => {
-          // Sort by from time, then by to time
-          return a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime();
+        v-for="shift in shifts!.sort((a: Shift, b: Shift) => {
+          // Sort by startTime, then by endTime
+          return a.startTime.getTime() - b.startTime.getTime() || a.endTime.getTime() - b.endTime.getTime();
         })"
-        :key="entry.id"
-        :entry="entry"
+        :key="shift.id"
+        :shift="shift"
         :selected-date="selectedDate"
-        @edit-entry="handleEditEntry"
+        @edit-shift="handleEditEntry"
       />
     </div>
 
     <BaseDialog
-      ref="clearEntriesDialog"
-      title="Clear Entries"
+      ref="clearShiftsDialog"
+      title="Clear Shifts"
       open-dialog-text="Clear"
       class="danger"
       :reset-forms="true"
@@ -186,8 +188,8 @@ export default {
       <ClearEntriesForm :selected-date="selectedDate" />
     </BaseDialog>
 
-    <BaseDialog ref="entryDialog" :title="entryFormData.title" :reset-forms="entryFormData.resetForm">
-      <EntryForm :selected-date="selectedDate" :entry="entryFormData.placeholderEntry" :action="entryFormData.action" />
+    <BaseDialog ref="shiftDialog" :title="shiftFormData.title" :reset-forms="shiftFormData.resetForm">
+      <EntryForm :selected-date="selectedDate" :shift="shiftFormData.placeholderShift" :action="shiftFormData.action" />
     </BaseDialog>
   </div>
 </template>
@@ -227,7 +229,7 @@ export default {
   width: 0;
 }
 
-.entry-list {
+.shift-list {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -235,11 +237,11 @@ export default {
   gap: calc(var(--padding) * 2);
 }
 
-.entry-list:has(.info[open]) .entry:not(:has(.info[open]), :hover) {
+.shift-list:has(.info[open]) .shift:not(:has(.info[open]), :hover) {
   opacity: 0.5;
 }
 
-.entry-list {
+.shift-list {
   --datetime-width: v-bind('datetimeWidth');
 }
 </style>

@@ -1,5 +1,12 @@
 <script lang="ts">
+import { mapState, mapActions } from 'pinia';
+import { useAuthStore } from '@/stores/authStore';
+
 export default {
+  computed: {
+    ...mapState(useAuthStore, ['account', 'isAuthenticated'])
+  },
+
   methods: {
     downloadData() {
       const data = JSON.stringify(localStorage);
@@ -18,21 +25,18 @@ export default {
       const fileInput = event.target as HTMLInputElement;
       const file = fileInput.files ? fileInput.files[0] : null;
 
-      if (!file) return; // Do nothing if no file is selected
+      if (!file) return;
 
       const reader = new FileReader();
 
       reader.onload = (e: ProgressEvent<FileReader>): void => {
         try {
           const data = JSON.parse(e.target?.result as string);
-
-          // Clear existing localStorage data and add new data
           localStorage.clear();
           Object.keys(data).forEach((key) => {
             localStorage.setItem(key, data[key]);
           });
         } catch (error) {
-          // Silent error, you can add console.log for debugging
           console.error('Invalid JSON file', error);
         }
 
@@ -40,7 +44,9 @@ export default {
       };
 
       reader.readAsText(file);
-    }
+    },
+
+    ...mapActions(useAuthStore, ['login', 'logout'])
   }
 };
 </script>
@@ -49,6 +55,8 @@ export default {
   <div class="main-menu">
     <input type="file" id="fileInput" accept=".json" @change="uploadData" />
     <button id="downloadButton" @click="downloadData">Download Data</button>
+    <button v-if="!isAuthenticated" @click="login">Login</button>
+    <button v-else @click="logout">Logout</button>
   </div>
 </template>
 

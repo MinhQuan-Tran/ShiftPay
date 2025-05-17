@@ -1,12 +1,12 @@
 <script lang="ts">
-import { Entry } from '@/classes';
+import Shift from '@/models/Shift';
 
 import { currencyFormat, toTimeStr } from '@/utils';
 
 export default {
   props: {
-    entry: {
-      type: Object as () => Entry,
+    shift: {
+      type: Object as () => Shift,
       required: true
     },
     selectedDate: {
@@ -15,58 +15,58 @@ export default {
     }
   },
 
-  emits: ['edit-entry'],
+  emits: ['edit-shift'],
 
   methods: {
     currencyFormat,
     toTimeStr,
 
-    handleEditEntry(entry: Entry) {
-      this.$emit('edit-entry', entry);
+    handleEditEntry(shift: Shift) {
+      this.$emit('edit-shift', shift);
     }
   }
 };
 </script>
 
 <template>
-  <div class="entry">
+  <div class="shift">
     <div class="datetime">
-      <div class="from">
+      <div class="start-time">
         <div
           class="date"
-          v-if="new Date(entry.from).setHours(0, 0, 0, 0) !== new Date(selectedDate).setHours(0, 0, 0, 0)"
+          v-if="new Date(shift.startTime).setHours(0, 0, 0, 0) !== new Date(selectedDate).setHours(0, 0, 0, 0)"
         >
           {{
-            entry.from.toLocaleDateString(undefined, {
+            shift.startTime.toLocaleDateString(undefined, {
               month: 'short',
               day: 'numeric'
             })
           }}
         </div>
-        <div class="time">{{ toTimeStr(entry.from) }}</div>
+        <div class="time">{{ toTimeStr(shift.startTime) }}</div>
       </div>
-      <div class="to">
+      <div class="end-time">
         <div
           class="date"
-          v-if="new Date(entry.to).setHours(0, 0, 0, 0) !== new Date(selectedDate).setHours(0, 0, 0, 0)"
+          v-if="new Date(shift.endTime).setHours(0, 0, 0, 0) !== new Date(selectedDate).setHours(0, 0, 0, 0)"
         >
           {{
-            entry.to.toLocaleDateString(undefined, {
+            shift.endTime.toLocaleDateString(undefined, {
               month: 'short',
               day: 'numeric'
             })
           }}
         </div>
-        <div class="time">{{ toTimeStr(entry.to) }}</div>
+        <div class="time">{{ toTimeStr(shift.endTime) }}</div>
       </div>
     </div>
     <div class="divider"></div>
-    <!-- Allow user to open multiple entries to compare -->
+    <!-- Allow user to open multiple shifts to compare -->
     <details class="info">
       <summary>
-        <div class="workplace">{{ entry.workplace }}</div>
+        <div class="workplace">{{ shift.workplace }}</div>
         <div class="billable-time">
-          {{ entry.billableDuration?.format('short') ?? 'error' }}
+          {{ shift.billableDuration?.format('short') ?? 'error' }}
           <img
             width="48"
             height="48"
@@ -83,20 +83,20 @@ export default {
             alt="cash--v1"
             class="inline-icon"
           />
-          {{ entry.income === undefined ? 'error' : currencyFormat(entry.income) }}
+          {{ shift.income === undefined ? 'error' : currencyFormat(shift.income) }}
         </div>
         <div class="unpaid-breaks">
-          {{ entry.totalBreakDuration.format('short') }}
+          {{ shift.totalBreakDuration.format('short') }}
           <img width="48" height="48" src="https://img.icons8.com/fluency/48/tea.png" alt="tea" class="inline-icon" />
         </div>
       </summary>
       <div class="details">
         <div class="secondary-info">
           <div class="others">
-            <div class="hourly-rate">{{ currencyFormat(entry.payRate) }}/hr</div>
+            <div class="hourly-rate">{{ currencyFormat(shift.payRate) }}/hr</div>
           </div>
           <div class="times">
-            <div v-for="(breakTime, index) in entry.unpaidBreaks" :key="index">
+            <div v-for="(breakTime, index) in shift.unpaidBreaks" :key="index">
               <div>
                 {{ breakTime.format('short') }}
                 <img
@@ -109,7 +109,7 @@ export default {
               </div>
             </div>
             <div class="shift-duration">
-              {{ entry.duration.format('short') }}
+              {{ shift.duration.format('short') }}
               <img
                 width="48"
                 height="48"
@@ -121,7 +121,7 @@ export default {
           </div>
         </div>
         <div class="actions">
-          <button @click="handleEditEntry(entry)">Edit</button>
+          <button @click="handleEditEntry(shift)">Edit</button>
         </div>
       </div>
     </details>
@@ -129,7 +129,7 @@ export default {
 </template>
 
 <style scoped>
-.entry {
+.shift {
   position: relative;
   display: flex;
   flex-direction: row;
@@ -146,8 +146,8 @@ export default {
   transition: all 0.3s;
 }
 
-.entry:hover,
-.entry:has(.info[open]) {
+.shift:hover,
+.shift:has(.info[open]) {
   box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.8);
 }
 

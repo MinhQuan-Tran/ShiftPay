@@ -53,6 +53,7 @@ export default {
   computed: {
     ...mapStores(useUserDataStore)
   },
+
   components: {
     MainMenu,
     WeekSchedule,
@@ -64,14 +65,14 @@ export default {
     window.addEventListener('storage', this.userDataStore.handleStorageChange);
 
     // Run once when mounted
-    Object.entries(this.userDataStore.$state).forEach(([key, value]) => {
+    Object.shifts(this.userDataStore.$state).forEach(([key, value]) => {
       // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
       this.userDataStore.saveToLocalStorage(key, value);
     });
 
     // Run on update
     this.userDataStore.$subscribe((mutation, state) => {
-      for (const [key, value] of Object.entries(state)) {
+      for (const [key, value] of Object.shifts(state)) {
         // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
         this.userDataStore.saveToLocalStorage(key, value);
       }

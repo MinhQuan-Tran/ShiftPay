@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Entry, Duration } from '@/classes';
+import { Shift, Duration } from '@/classes';
 import { deepClone } from '@/utils';
 
 import { mapWritableState } from 'pinia';
@@ -15,9 +15,9 @@ export default {
       type: Date,
       required: true
     },
-    entry: {
-      type: Object as () => Partial<Entry>,
-      default: () => ({}) as Partial<Entry>
+    shift: {
+      type: Object as () => Partial<Shift>,
+      default: () => ({}) as Partial<Shift>
     },
     action: {
       type: String,
@@ -27,21 +27,21 @@ export default {
 
   data() {
     return {
-      formData: deepClone<Partial<Entry>>(this.entry),
+      formData: deepClone<Partial<Shift>>(this.shift),
       saveEntryTemplate: false,
       deleteEntryTemplate: false,
       recurringEntry: false,
-      entryName: '',
+      shiftName: '',
       hiddenElements: [] as Element[] // Elements to hide when holding a button in action bar
     };
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['entries', 'checkInTime', 'prevWorkInfos', 'entryTemplates'])
+    ...mapWritableState(useUserDataStore, ['shifts', 'checkInTime', 'prevWorkInfos', 'shiftTemplates'])
   },
 
   emits: {
-    entryChange(payload: { action: string; entry: Entry }) {
+    shiftChange(payload: { action: string; shift: Shift }) {
       const actions = ['add', 'edit', 'delete', 'check in/out'];
       return actions.includes(payload.action);
     }
@@ -53,63 +53,63 @@ export default {
       alert(message);
     },
 
-    quickAddEntry(entry: Entry) {
-      const newEntry = new Entry(
-        this.entries.length + 1,
-        entry.workplace,
-        entry.payRate,
-        new Date(entry.from),
-        new Date(entry.to),
-        deepClone(entry.unpaidBreaks) as Duration[]
+    quickAddEntry(shift: Shift) {
+      const newEntry = new Shift(
+        this.shifts.length + 1,
+        shift.workplace,
+        shift.payRate,
+        new Date(shift.startTime),
+        new Date(shift.endTime),
+        deepClone(shift.unpaidBreaks) as Duration[]
       );
 
-      const duration = newEntry.to.getTime() - newEntry.from.getTime();
+      const duration = newEntry.endTime.getTime() - newEntry.startTime.getTime();
 
-      newEntry.from.setFullYear(
+      newEntry.startTime.setFullYear(
         this.selectedDate.getFullYear(),
         this.selectedDate.getMonth(),
         this.selectedDate.getDate()
       );
-      newEntry.to.setTime(newEntry.from.getTime() + duration);
+      newEntry.endTime.setTime(newEntry.startTime.getTime() + duration);
 
-      this.entries.push(newEntry);
+      this.shifts.push(newEntry);
 
-      const form = this.$refs.entryForm as HTMLFormElement;
+      const form = this.$refs.shiftForm as HTMLFormElement;
       form.reset();
 
       const dialog = form.closest('dialog') as HTMLDialogElement;
       dialog?.close();
     },
 
-    entryAction(event: Event) {
+    shiftAction(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
       const action = ((event as SubmitEvent)?.submitter as HTMLButtonElement).value;
 
-      let entry: Entry;
+      let shift: Shift;
 
       if (['add', 'check in', 'edit'].includes(action)) {
         try {
-          entry = new Entry(
+          shift = new Shift(
             action === 'edit' ? this.formData.id! : 0,
             this.formData.workplace!,
             this.formData.payRate!,
-            new Date(this.formData.from!),
-            new Date(this.formData.to!),
+            new Date(this.formData.startTime!),
+            new Date(this.formData.endTime!),
             this.formData.unpaidBreaks
               ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
               .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
           );
 
           if (this.saveEntryTemplate) {
-            this.entryTemplates[this.entryName] = {
-              entry: entry
+            this.shiftTemplates[this.shiftName] = {
+              shift: shift
             };
           }
         } catch (error) {
-          alert('Invalid entry');
+          alert('Invalid shift');
           console.error(this.formData);
-          throw new Error('Invalid entry: ' + error);
+          throw new Error('Invalid shift: ' + error);
         }
       }
 
@@ -120,7 +120,7 @@ export default {
           const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
           const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
           const recurringEndDate = new Date(
-            (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? entry!.from
+            (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? shift!.startTime
           );
 
           recurringEndDate.setHours(23, 59, 59, 999);
@@ -128,31 +128,31 @@ export default {
           console.log(recurringDay, recurringMonth, recurringYear, recurringEndDate);
 
           for (
-            const currentFromDate = new Date(entry!.from);
+            const currentFromDate = new Date(shift!.startTime);
             currentFromDate < recurringEndDate;
             currentFromDate.setDate(currentFromDate.getDate() + recurringDay),
               currentFromDate.setMonth(currentFromDate.getMonth() + recurringMonth),
               currentFromDate.setFullYear(currentFromDate.getFullYear() + recurringYear)
           ) {
-            const recurringEntry = new Entry(
-              this.entries.length + 1,
-              entry!.workplace,
-              entry!.payRate,
+            const recurringEntry = new Shift(
+              this.shifts.length + 1,
+              shift!.workplace,
+              shift!.payRate,
               new Date(currentFromDate),
-              // entry!.to.getTime() - entry!.from.getTime() is the duration of the entry
-              new Date(currentFromDate.getTime() + entry!.to.getTime() - entry!.from.getTime()),
-              deepClone(entry!.unpaidBreaks) as Duration[]
+              // shift!.endTime.getTime() - shift!.startTime.getTime() is the duration of the shift
+              new Date(currentFromDate.getTime() + shift!.endTime.getTime() - shift!.startTime.getTime()),
+              deepClone(shift!.unpaidBreaks) as Duration[]
             );
 
-            this.entries.push(recurringEntry);
+            this.shifts.push(recurringEntry);
           }
 
           // Add workplace and pay rate to prevWorkInfos
-          if (entry!.workplace in this.prevWorkInfos && this.prevWorkInfos[entry!.workplace].payRate instanceof Set) {
-            this.prevWorkInfos[entry!.workplace].payRate.add(Number(entry!.payRate));
+          if (shift!.workplace in this.prevWorkInfos && this.prevWorkInfos[shift!.workplace].payRate instanceof Set) {
+            this.prevWorkInfos[shift!.workplace].payRate.add(Number(shift!.payRate));
           } else {
-            this.prevWorkInfos[entry!.workplace] = {
-              payRate: new Set<number>([Number(entry!.payRate)])
+            this.prevWorkInfos[shift!.workplace] = {
+              payRate: new Set<number>([Number(shift!.payRate)])
             };
           }
 
@@ -165,21 +165,21 @@ export default {
         }
 
         case 'edit':
-          this.entries.splice(
-            this.entries.findIndex((e) => e.id === entry.id),
+          this.shifts.splice(
+            this.shifts.findIndex((e) => e.id === shift.id),
             1,
-            entry!
+            shift!
           );
           break;
 
         case 'delete':
           if (!this.formData || !this.formData.id) {
-            alert('Invalid entry');
-            throw new Error('Invalid entry');
+            alert('Invalid shift');
+            throw new Error('Invalid shift');
           }
 
-          this.entries.splice(
-            this.entries.findIndex((e) => e.id === this.formData!.id),
+          this.shifts.splice(
+            this.shifts.findIndex((e) => e.id === this.formData!.id),
             1
           );
           break;
@@ -249,7 +249,7 @@ export default {
   },
 
   watch: {
-    entry() {
+    shift() {
       this.resetForm();
     }
   }
@@ -257,30 +257,30 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent="entryAction" @reset.prevent="resetForm" ref="entryForm">
+  <form @submit.prevent="shiftAction" @reset.prevent="resetForm" ref="shiftForm">
     <input type="hidden" name="id" v-model="formData.id" />
 
     <InputLabel
-      label-text="Entry Templates"
+      label-text="Shift Templates"
       v-if="action === 'add'"
       v-model:toggle-value="deleteEntryTemplate"
       toggle-color="var(--danger-color)"
       sub-text="Delete"
     >
-      <div class="entry-templates">
+      <div class="shift-templates">
         <button
-          v-for="(template, name) in entryTemplates"
+          v-for="(template, name) in shiftTemplates"
           :key="name"
-          @click="deleteEntryTemplate ? delete entryTemplates[name] : quickAddEntry(template.entry)"
+          @click="deleteEntryTemplate ? delete shiftTemplates[name] : quickAddEntry(template.shift)"
           type="button"
-          class="entry-info"
+          class="shift-info"
         >
           <div class="name">{{ name }}</div>
         </button>
         <button
           type="button"
-          :class="['entry-info', { active: saveEntryTemplate }]"
-          id="save-entry-template-btn"
+          :class="['shift-info', { active: saveEntryTemplate }]"
+          id="save-shift-template-btn"
           @click="saveEntryTemplate = !saveEntryTemplate"
         >
           <div class="name">&nbsp;+&nbsp;</div>
@@ -288,13 +288,13 @@ export default {
       </div>
     </InputLabel>
 
-    <InputLabel label-text="Entry Name" for-id="entry-name" v-if="saveEntryTemplate">
+    <InputLabel label-text="Shift Name" for-id="shift-name" v-if="saveEntryTemplate">
       <input
         type="text"
-        id="entry-name"
-        name="entryName"
+        id="shift-name"
+        name="shiftName"
         placeholder="e.g. McDonald | Delivery"
-        v-model="entryName"
+        v-model="shiftName"
         required
       />
     </InputLabel>
@@ -344,17 +344,17 @@ export default {
       </ComboBox>
     </InputLabel>
 
-    <InputLabel label-text="From" for-id="from">
+    <InputLabel label-text="From" for-id="start-time">
       <input
         type="datetime-local"
-        id="from"
-        name="from"
-        :value="toDateTimeLocal(formData.from)"
+        id="start-time"
+        name="start-time"
+        :value="toDateTimeLocal(formData.startTime)"
         @input="
           (event) => {
-            formData.from = new Date((event.target as HTMLInputElement).value);
-            if (formData.to && formData.from > formData.to) {
-              formData.to = formData.from;
+            formData.startTime = new Date((event.target as HTMLInputElement).value);
+            if (formData.endTime && formData.startTime > formData.endTime) {
+              formData.endTime = formData.startTime;
             }
           }
         "
@@ -362,14 +362,14 @@ export default {
       />
     </InputLabel>
 
-    <InputLabel label-text="To" for-id="to">
+    <InputLabel label-text="To" for-id="end-time">
       <input
         type="datetime-local"
-        id="to"
-        name="to"
-        :value="toDateTimeLocal(formData.to)"
+        id="end-time"
+        name="end-time"
+        :value="toDateTimeLocal(formData.endTime)"
         :min="toDateTimeLocal(formData.from)"
-        @input="(event) => (formData.to = new Date((event.target as HTMLInputElement).value))"
+        @input="(event) => (formData.endTime = new Date((event.target as HTMLInputElement).value))"
         required
       />
     </InputLabel>
@@ -451,7 +451,7 @@ export default {
       v-model:toggle-value="recurringEntry"
     >
       <div v-if="recurringEntry" class="recurring-inputs">
-        <span>Entry repeat every:</span>
+        <span>Shift repeat every:</span>
         <input
           type="number"
           ref="recurring-day"
@@ -484,12 +484,12 @@ export default {
           name="action"
           value="delete"
           class="danger"
-          id="delete-entry-btn"
+          id="delete-shift-btn"
           formnovalidate
         >
           Delete
         </ButtonConfirm>
-        <button type="submit" name="action" value="edit" class="warning" id="edit-entry-btn">Edit Entry</button>
+        <button type="submit" name="action" value="edit" class="warning" id="edit-shift-btn">Edit Shift</button>
       </template>
 
       <!-- Add, Check in/out -->
@@ -512,9 +512,9 @@ export default {
           name="action"
           value="add"
           :class="['primary', { active: saveEntryTemplate }]"
-          id="add-entry-btn"
+          id="add-shift-btn"
         >
-          {{ saveEntryTemplate ? 'Save & ' : '' }}Add Entry
+          {{ saveEntryTemplate ? 'Save & ' : '' }}Add Shift
         </button>
       </template>
     </div>
@@ -526,7 +526,7 @@ form {
   gap: calc(var(--padding) * 1.5);
 }
 
-.entry-templates {
+.shift-templates {
   position: relative;
   display: flex;
   overflow-x: auto;
@@ -535,14 +535,14 @@ form {
   padding: var(--padding-small);
 }
 
-.entry-templates .entry-info {
+.shift-templates .shift-info {
   flex: 0 0 auto; /* Prevent buttons from shrinking or growing */
   background-color: var(--input-background-color);
   min-width: 80px;
 }
 
-#save-entry-template-btn.active,
-#add-entry-btn.active {
+#save-shift-template-btn.active,
+#add-shift-btn.active {
   background-color: var(--success-color) !important;
   color: var(--text-color-black);
 }
