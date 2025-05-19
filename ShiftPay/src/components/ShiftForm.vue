@@ -369,7 +369,7 @@ export default {
         id="end-time"
         name="end-time"
         :value="toDateTimeLocal(formData.endTime)"
-        :min="toDateTimeLocal(formData.from)"
+        :min="toDateTimeLocal(formData.startTime)"
         @input="(event) => (formData.endTime = new Date((event.target as HTMLInputElement).value))"
         required
       />
