@@ -1,4 +1,4 @@
-# Payment Calculator
+# ShiftPay - Web App
 
 ## Live Product
 
