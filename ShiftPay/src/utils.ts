@@ -26,6 +26,7 @@ export function getShifts(shifts: Array<Shift>, startTime: Date, endTime: Date):
   });
 }
 
+// Shouldn't be used
 export function deepClone<T>(obj: T, hash = new WeakMap()): T {
   // Handle null, undefined, and primitives
   if (obj === null || typeof obj !== 'object') {

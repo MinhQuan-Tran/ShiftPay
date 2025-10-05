@@ -3,7 +3,8 @@ import Shift from '@/models/Shift';
 import { currencyFormat, toTimeStr, getShifts } from '@/utils';
 
 import { mapStores } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { useShiftStore } from '@/stores/shiftStore';
+import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
 
 import DayScheduleShift from '@/components/DayScheduleShift.vue';
 import BaseDialog from '@/components/BaseDialog.vue';
@@ -27,7 +28,7 @@ export default {
         action: '',
         placeholderShift: undefined as
           | {
-              id?: number;
+              id?: string;
               workplace?: string;
               payRate?: number;
               startTime?: Date;
@@ -58,21 +59,21 @@ export default {
       // If not checked in
       if (!this.isCheckIn) {
         // Check in
-        this.userDataStore.checkInTime = new Date();
+        this.checkInTimeStore.checkInTime = new Date();
         return;
       }
 
       // If no check in time found
-      if (!this.userDataStore.checkInTime) {
+      if (!this.checkInTimeStore.checkInTime) {
         if (confirm('Check in time is not set. Do you want to set it now?')) {
-          this.userDataStore.checkInTime = new Date();
+          this.checkInTimeStore.checkInTime = new Date();
         }
         return;
       }
 
-      if (isNaN(this.userDataStore.checkInTime.getTime())) {
+      if (isNaN(this.checkInTimeStore.checkInTime.getTime())) {
         if (confirm('Invalid check in time. Do you want to remove it?')) {
-          this.userDataStore.checkInTime = undefined;
+          this.checkInTimeStore.checkInTime = undefined;
         }
         return;
       }
@@ -83,7 +84,7 @@ export default {
         resetForm: false,
         action: 'check in/out',
         placeholderShift: {
-          startTime: this.userDataStore.checkInTime,
+          startTime: this.checkInTimeStore.checkInTime,
           endTime: new Date()
         }
       };
@@ -116,9 +117,11 @@ export default {
     }
   },
   computed: {
-    ...mapStores(useUserDataStore),
+    ...mapStores(useShiftStore),
+    ...mapStores(useCheckInTimeStore),
+    
     isCheckIn() {
-      return this.userDataStore.checkInTime !== undefined;
+      return this.checkInTimeStore.checkInTime !== undefined;
     },
 
     shifts() {
@@ -133,7 +136,7 @@ export default {
 
       this.$forceUpdate();
 
-      return getShifts(this.userDataStore.shifts as Array<Shift>, startTime, endTime);
+      return getShifts(this.shiftStore.shifts as Array<Shift>, startTime, endTime);
     }
   },
   mounted() {

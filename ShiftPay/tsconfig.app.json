@@ -5,9 +5,11 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    // Follow Capacitor.js supported version
+    "target": "ES2019",
+    "lib": ["DOM", "ES2019"]
   }
 }

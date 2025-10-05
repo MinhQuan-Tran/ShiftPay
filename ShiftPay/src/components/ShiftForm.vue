@@ -3,8 +3,11 @@ import Shift from '@/models/Shift';
 import Duration from '@/models/Duration';
 import { deepClone } from '@/utils';
 
-import { mapWritableState } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { mapStores } from 'pinia';
+import { useShiftStore } from '@/stores/shiftStore';
+import { useWorkInfosStore } from '@/stores/workInfoStore';
+import { useShiftTemplatesStore } from '@/stores/shiftTemplateStore';
+import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
 
 import ButtonConfirm from './ButtonConfirm.vue';
 import ComboBox from './ComboBox.vue';
@@ -38,7 +41,7 @@ export default {
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['shifts', 'checkInTime', 'prevWorkInfos', 'shiftTemplates'])
+    ...mapStores(useShiftStore, useShiftTemplatesStore, useWorkInfosStore, useCheckInTimeStore),
   },
 
   emits: {
@@ -55,14 +58,13 @@ export default {
     },
 
     quickAddEntry(shift: Shift) {
-      const newEntry = new Shift(
-        this.shifts.length + 1,
-        shift.workplace,
-        shift.payRate,
-        new Date(shift.startTime),
-        new Date(shift.endTime),
-        deepClone(shift.unpaidBreaks) as Duration[]
-      );
+      const newEntry = new Shift({
+        workplace: shift.workplace,
+        payRate: shift.payRate,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        unpaidBreaks: shift.unpaidBreaks
+      });
 
       const duration = newEntry.endTime.getTime() - newEntry.startTime.getTime();
 
@@ -73,7 +75,7 @@ export default {
       );
       newEntry.endTime.setTime(newEntry.startTime.getTime() + duration);
 
-      this.shifts.push(newEntry);
+      this.shiftStore.add(newEntry);
 
       const form = this.$refs.shiftForm as HTMLFormElement;
       form.reset();
@@ -82,96 +84,101 @@ export default {
       dialog?.close();
     },
 
+    parseFormData(): Shift {
+      try {
+        return new Shift({
+          id: this.formData.id!,
+          workplace: this.formData.workplace!,
+          payRate: this.formData.payRate!,
+          startTime: this.formData.startTime!,
+          endTime: this.formData.endTime!,
+          unpaidBreaks: this.formData.unpaidBreaks ?? []
+        });
+      } catch (error) {
+        alert('Invalid shift');
+        console.error(this.formData);
+        throw new Error('Invalid shift: ' + error);
+      }
+    },
+
     shiftAction(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
       const action = ((event as SubmitEvent)?.submitter as HTMLButtonElement).value;
 
-      let shift: Shift;
-
-      if (['add', 'check in', 'edit'].includes(action)) {
-        try {
-          shift = new Shift(
-            action === 'edit' ? this.formData.id! : 0,
-            this.formData.workplace!,
-            this.formData.payRate!,
-            new Date(this.formData.startTime!),
-            new Date(this.formData.endTime!),
-            this.formData.unpaidBreaks
-              ?.map((ub) => new Duration({ hours: ub.hours, minutes: ub.minutes }))
-              .filter((ub) => ub.hours > 0 || ub.minutes > 0) ?? []
-          );
-
-          if (this.saveEntryTemplate) {
-            this.shiftTemplates[this.shiftName] = {
-              shift: shift
-            };
-          }
-        } catch (error) {
-          alert('Invalid shift');
-          console.error(this.formData);
-          throw new Error('Invalid shift: ' + error);
-        }
-      }
-
+      // Match action with form data
       switch (action) {
         case 'add':
         case 'check in': {
-          const recurringDay = Number((this.$refs['recurring-day'] as HTMLInputElement)?.value);
-          const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
-          const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
-          const recurringEndDate = new Date(
-            (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? shift!.startTime
-          );
+          const shift = this.parseFormData();
 
-          recurringEndDate.setHours(23, 59, 59, 999);
+          console.log('Adding shift:', shift);
 
-          console.log(recurringDay, recurringMonth, recurringYear, recurringEndDate);
+          const newShifts: Shift[] = [];
+          newShifts.push(shift);
 
-          for (
-            const currentFromDate = new Date(shift!.startTime);
-            currentFromDate < recurringEndDate;
-            currentFromDate.setDate(currentFromDate.getDate() + recurringDay),
-              currentFromDate.setMonth(currentFromDate.getMonth() + recurringMonth),
-              currentFromDate.setFullYear(currentFromDate.getFullYear() + recurringYear)
-          ) {
-            const recurringEntry = new Shift(
-              this.shifts.length + 1,
-              shift!.workplace,
-              shift!.payRate,
-              new Date(currentFromDate),
-              // shift!.endTime.getTime() - shift!.startTime.getTime() is the duration of the shift
-              new Date(currentFromDate.getTime() + shift!.endTime.getTime() - shift!.startTime.getTime()),
-              deepClone(shift!.unpaidBreaks) as Duration[]
+          // Handle recurring shifts
+          if (this.recurringEntry) {
+            const recurringDay = Number((this.$refs['recurring-day'] as HTMLInputElement)?.value);
+            const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
+            const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
+
+            const recurringEndDate = new Date(
+              (this.$refs['recurring-end-date'] as HTMLInputElement)?.value ?? shift!.startTime
             );
+            recurringEndDate.setHours(23, 59, 59, 999);
 
-            this.shifts.push(recurringEntry);
+            const duration = shift!.endTime.getTime() - shift!.startTime.getTime();
+
+            for (
+              const currentFromDate = new Date(shift!.startTime);
+              currentFromDate < recurringEndDate;
+              // Skip the first entry as it's already added
+            ) {
+              // Increment the currentFromDate by the recurring interval
+              currentFromDate.setDate(currentFromDate.getDate() + recurringDay);
+              currentFromDate.setMonth(currentFromDate.getMonth() + recurringMonth);
+              currentFromDate.setFullYear(currentFromDate.getFullYear() + recurringYear);
+
+              const start = new Date(currentFromDate);
+              const end = new Date(currentFromDate.getTime() + duration);
+
+              const recurringEntry = new Shift({
+                workplace: shift!.workplace,
+                payRate: shift!.payRate,
+                startTime: start,
+                endTime: end,
+                unpaidBreaks: shift!.unpaidBreaks
+              });
+
+              newShifts.push(recurringEntry);
+            }            
           }
 
-          // Add workplace and pay rate to prevWorkInfos
-          if (shift!.workplace in this.prevWorkInfos && this.prevWorkInfos[shift!.workplace].payRate instanceof Set) {
-            this.prevWorkInfos[shift!.workplace].payRate.add(Number(shift!.payRate));
-          } else {
-            this.prevWorkInfos[shift!.workplace] = {
-              payRate: new Set<number>([Number(shift!.payRate)])
-            };
-          }
+          // Batch the reactive update (one change, multiple shifts) -> better performance
+          this.shiftStore.add(newShifts);
+
+          // Add workplace and pay rate to workInfos
+          this.workInfosStore.add(shift.workplace, shift.payRate);
 
           // Remove check in time
           if (action === 'check in') {
-            this.checkInTime = undefined;
+            this.checkInTimeStore.clear();
           }
 
           break;
         }
 
-        case 'edit':
-          this.shifts.splice(
-            this.shifts.findIndex((e) => e.id === shift.id),
-            1,
-            shift!
-          );
+        case 'edit': {
+          const shift = this.parseFormData();
+          if (!shift.id) {
+            alert('Invalid shift');
+            throw new Error('Invalid shift');
+          }
+          this.shiftStore.update(shift.id, shift);
+
           break;
+        }
 
         case 'delete':
           if (!this.formData || !this.formData.id) {
@@ -179,14 +186,11 @@ export default {
             throw new Error('Invalid shift');
           }
 
-          this.shifts.splice(
-            this.shifts.findIndex((e) => e.id === this.formData!.id),
-            1
-          );
+          this.shiftStore.delete(this.formData.id);
           break;
 
         case 'remove check in':
-          this.checkInTime = undefined;
+          this.checkInTimeStore.clear();
           break;
 
         default:
@@ -207,6 +211,7 @@ export default {
       }
     },
 
+    // For delete button hold
     focusButtonConfirm(isHolding: boolean) {
       if (isHolding) {
         // Hide all elements except this button and the bar
@@ -270,9 +275,9 @@ export default {
     >
       <div class="shift-templates">
         <button
-          v-for="(template, name) in shiftTemplates"
+          v-for="[name, template] in shiftTemplatesStore.shiftTemplates"
           :key="name"
-          @click="deleteEntryTemplate ? delete shiftTemplates[name] : quickAddEntry(template.shift)"
+          @click="deleteEntryTemplate ? shiftTemplatesStore.delete(name) : quickAddEntry(template as Shift)"
           type="button"
           class="shift-info"
         >
@@ -303,9 +308,9 @@ export default {
     <InputLabel label-text="Workplace" for-id="workplace">
       <ComboBox
         :value="formData?.workplace || ''"
-        @update:value="(newValue) => (formData.workplace = newValue)"
-        :list="Object.keys(prevWorkInfos)"
-        @delete-item="delete prevWorkInfos[$event]"
+        @update:value="newValue => formData.workplace = newValue"
+        :list="Object.keys(workInfosStore.workInfos)"
+        @delete-item="workInfo => workInfosStore.delete(workInfo)"
         deletable
       >
         <input
@@ -324,11 +329,11 @@ export default {
         :value="formData.payRate ? formData.payRate.toString() : ''"
         @update:value="(newValue: number | undefined) => (formData.payRate = Number(newValue))"
         :list="
-          formData.workplace && prevWorkInfos[formData.workplace]?.payRate
-            ? Array.from(prevWorkInfos[formData.workplace]?.payRate).map((pr) => pr.toString())
+          formData.workplace && workInfosStore.workInfos.get(formData.workplace)?.payRates
+            ? Array.from(workInfosStore.workInfos.get(formData.workplace)?.payRates ?? []).map((pr) => pr.toString())
             : []
         "
-        @delete-item="formData.workplace && prevWorkInfos[formData.workplace]?.payRate?.delete(parseFloat($event))"
+        @delete-item="formData.workplace && workInfosStore.workInfos.get(formData.workplace)?.payRates?.delete(parseFloat($event))"
         deletable
       >
         <input

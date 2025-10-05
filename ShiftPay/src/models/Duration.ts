@@ -2,7 +2,20 @@ export default class Duration {
   private _hours?: number;
   private _minutes?: number;
 
-  constructor(props?: { hours?: number; minutes?: number; startTime?: Date; endTime?: Date }) {
+  constructor(props?: { hours?: number; minutes?: number; startTime?: Date; endTime?: Date } | string) {
+    if (typeof props === 'string') {
+      const parts = props.split(':').map((part) => part.trim());
+
+      const [hours, minutes, _] = parts.map((part) => parseInt(part, 10));
+      if (isNaN(hours) || isNaN(minutes)) {
+        throw new Error('Invalid duration string format. Hours and minutes must be numbers.');
+      }
+
+      this.hours = hours;
+      this.minutes = minutes;
+      return;
+    }
+
     const { hours, minutes, startTime, endTime } = props ?? {};
 
     if (hours !== undefined) {
@@ -72,5 +85,9 @@ export default class Duration {
       style: style,
       hoursDisplay: hoursDisplay
     }).format(this);
+  }
+
+  toDTO(): string {
+    return `${this.hours}:${this.minutes}`;
   }
 }

@@ -3,7 +3,8 @@ import packageJson from '@/../package.json';
 import changelog from '@/../changelog.json';
 
 import { mapStores } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { useAuthStore } from './stores/authStore';
+import { useShiftStore } from '@/stores/shiftStore';
 
 import MainMenu from '@/components/MainMenu.vue';
 import WeekSchedule from '@/components/WeekSchedule.vue';
@@ -51,7 +52,8 @@ export default {
   },
 
   computed: {
-    ...mapStores(useUserDataStore)
+    ...mapStores(useAuthStore),
+    ...mapStores(useShiftStore)
   },
 
   components: {
@@ -61,22 +63,10 @@ export default {
     BaseDialog
   },
 
-  mounted() {
-    window.addEventListener('storage', this.userDataStore.handleStorageChange);
+  async mounted() {
+    await this.authStore.init();
 
-    // Run once when mounted
-    Object.entries(this.userDataStore.$state).forEach(([key, value]) => {
-      // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
-      this.userDataStore.saveToLocalStorage(key, value);
-    });
-
-    // Run on update
-    this.userDataStore.$subscribe((mutation, state) => {
-      for (const [key, value] of Object.shifts(state)) {
-        // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
-        this.userDataStore.saveToLocalStorage(key, value);
-      }
-    });
+    this.shiftStore.fetch();
 
     const currentVersion = localStorage.getItem('appVersion');
     if (currentVersion !== packageJson.version) {

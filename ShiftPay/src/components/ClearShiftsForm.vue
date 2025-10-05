@@ -1,8 +1,9 @@
 <script lang="ts">
-import { mapWritableState } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { mapStores, mapWritableState } from 'pinia';
 
 import ButtonConfirm from './ButtonConfirm.vue';
+
+import { useShiftStore } from '@/stores/shiftStore';
 
 export default {
   props: {
@@ -21,7 +22,7 @@ export default {
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['shifts'])
+    ...mapStores(useShiftStore),
   },
 
   emits: {
@@ -58,7 +59,7 @@ export default {
         case 'day':
           console.log(startTime, endTime);
 
-          this.shifts = this.shifts.filter((shift) => {
+          this.shiftStore.shifts = this.shiftStore.shifts.filter((shift) => {
             const fromTime = new Date(shift.startTime);
             const toTime = new Date(shift.endTime);
 
@@ -68,7 +69,7 @@ export default {
           break;
 
         case 'all':
-          this.shifts = [];
+          this.shiftStore.shifts = [];
           break;
 
         default:

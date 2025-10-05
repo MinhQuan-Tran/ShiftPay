@@ -1,7 +1,15 @@
 import { useAuthStore } from '@/stores/authStore';
+import type Shift from './models/Shift';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
-type ApiResource = 'shifts' | 'summary';
+type ApiResource =
+  | 'shifts'
+  | `shifts/${string}`
+  | 'summary'
+  | 'workInfos'
+  | `workInfos/${string}`
+  | 'shiftTemplates'
+  | `shiftTemplates/${string}`;
 type QueryParams = Record<string, string | number | boolean>;
 
 interface RequestOptions {
@@ -11,7 +19,7 @@ interface RequestOptions {
 }
 
 function buildUrl(resource: ApiResource, queryParams?: QueryParams): string {
-  const baseUrl = `/api/${resource}`;
+  const baseUrl = `${import.meta.env.VITE_API_URL}/api/${resource}`;
   if (!queryParams) return baseUrl;
 
   const searchParams = new URLSearchParams();
@@ -58,26 +66,60 @@ async function createRequest(resource: ApiResource, options: RequestOptions) {
 
 export const api = {
   shifts: {
-    async fetch(arg: string | QueryParams) {
-      if (typeof arg === 'string') {
-        return createRequest('shifts', { method: 'GET', queryParams: { id: arg } });
-      }
-      return createRequest('shifts', { method: 'GET', queryParams: arg });
+    async fetch(id?: string, params?: QueryParams) {
+      return createRequest(`shifts/${id ?? ''}`, { method: 'GET', queryParams: params });
     },
-    async create(data: any) {
-      return createRequest('shifts', { method: 'POST', body: data });
+
+    async create(shift: Shift) {
+      return createRequest('shifts', { method: 'POST', body: shift.toDTO() });
     },
-    async update(id: string, data: any) {
-      return createRequest('shifts', { method: 'PUT', body: data, queryParams: { id } });
+
+    async update(id: string, shift: Shift) {
+      return createRequest(`shifts/${id}`, { method: 'PUT', body: shift.toDTO() });
     },
+
     async delete(id: string) {
-      return createRequest('shifts', { method: 'DELETE', queryParams: { id } });
+      return createRequest(`shifts/${id}`, { method: 'DELETE' });
     }
   },
 
   summary: {
     async fetch(arg?: QueryParams) {
       return createRequest('summary', { method: 'GET', queryParams: arg });
+    }
+  },
+
+  workInfos: {
+    async fetch() {
+      return createRequest('workInfos', { method: 'GET' });
+    },
+
+    async create(workplace: string, payRate: number) {
+      return createRequest('workInfos', { method: 'POST', body: { workplace, payRate } });
+    },
+
+    // No update
+
+    async delete(workplace: string, payRate?: number) {
+      const queryParams: QueryParams = { workplace };
+
+      if (payRate !== undefined) queryParams.payRate = payRate;
+
+      return createRequest('workInfos', { method: 'DELETE', queryParams });
+    }
+  },
+
+  shiftTemplates: {
+    async fetch() {
+      return createRequest('shiftTemplates', { method: 'GET' });
+    },
+
+    async create(shift: Shift) {
+      return createRequest('shiftTemplates', { method: 'POST', body: shift.toDTO() });
+    },
+
+    async delete(id: string) {
+      return createRequest(`shiftTemplates/${id}`, { method: 'DELETE' });
     }
   }
 };
