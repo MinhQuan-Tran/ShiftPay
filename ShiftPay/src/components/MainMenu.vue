@@ -1,10 +1,14 @@
 <script lang="ts">
-import { mapState, mapActions } from 'pinia';
+import { mapStores } from 'pinia';
+
 import { useAuthStore } from '@/stores/authStore';
+import { useShiftStore } from '@/stores/shiftStore';
+
+import Shift from '@/models/Shift';
 
 export default {
   computed: {
-    ...mapState(useAuthStore, ['account', 'isAuthenticated'])
+    ...mapStores(useAuthStore, useShiftStore)
   },
 
   methods: {
@@ -32,21 +36,31 @@ export default {
       reader.onload = (e: ProgressEvent<FileReader>): void => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          localStorage.clear();
-          Object.keys(data).forEach((key) => {
-            localStorage.setItem(key, data[key]);
-          });
-        } catch (error) {
-          console.error('Invalid JSON file', error);
-        }
 
-        alert('Data imported successfully, please refresh the page to see the changes.');
+          console.log('Imported data:', data);
+
+          const parsed = Shift.parseAll(JSON.parse(data.shifts || data.entries));
+
+          if (!parsed.success && !confirm('Some shifts could not be loaded. Do you want to proceed?')) {
+            throw new Error('User aborted due to parse errors.');
+          }
+
+          this.shiftStore.add(parsed.shifts).then(() => {
+            console.log('Shifts added successfully.');
+          })
+        } catch (error: any) {
+          throw new Error('Failed to import data: ' + (error && error.message ? error.message : String(error)));
+        }
       };
 
       reader.readAsText(file);
     },
 
-    ...mapActions(useAuthStore, ['login', 'logout'])
+    async handleLogin() {
+      await this.authStore.login();
+
+      await this.shiftStore.fetch();
+    }
   }
 };
 </script>
@@ -55,8 +69,8 @@ export default {
   <div class="main-menu">
     <input type="file" id="fileInput" accept=".json" @change="uploadData" />
     <button id="downloadButton" @click="downloadData">Download Data</button>
-    <button v-if="!isAuthenticated" @click="login">Login</button>
-    <button v-else @click="logout">Logout</button>
+    <button v-if="!authStore.isAuthenticated" @click="handleLogin">Login</button>
+    <button v-else @click="authStore.logout">Logout</button>
   </div>
 </template>
 

@@ -1,11 +1,4 @@
 import Duration from '@/models/Duration';
-import Shift from '@/models/Shift';
-
-export type EntryTemplates = {
-  [name: string]: {
-    shift: Shift;
-  };
-};
 
 export type WorkInfo = {
   payRates: Set<number>;

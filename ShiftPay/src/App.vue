@@ -64,8 +64,6 @@ export default {
   },
 
   async mounted() {
-    await this.authStore.init();
-
     this.shiftStore.fetch();
 
     const currentVersion = localStorage.getItem('appVersion');

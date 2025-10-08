@@ -21,7 +21,7 @@ export default {
     currencyFormat,
     toTimeStr,
 
-    handleEditEntry(shift: Shift) {
+    handleEditShift(shift: Shift) {
       this.$emit('edit-shift', shift);
     }
   }
@@ -121,7 +121,7 @@ export default {
           </div>
         </div>
         <div class="actions">
-          <button @click="handleEditEntry(shift)">Edit</button>
+          <button @click="handleEditShift(shift)">Edit</button>
         </div>
       </div>
     </details>

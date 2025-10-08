@@ -24,7 +24,7 @@ export const useShiftTemplatesStore = defineStore('shiftTemplates', {
                 return null;
               }
             })
-            .filter((entry): entry is [string, Shift] => entry !== null)
+            .filter((shift): shift is [string, Shift] => shift !== null)
         );
       } catch (error: any) {
         throw new Error('Failed to fetch shift templates: ' + (error && error.message ? error.message : String(error)));

@@ -32,9 +32,9 @@ export default {
   data() {
     return {
       formData: deepClone<Partial<Shift>>(this.shift),
-      saveEntryTemplate: false,
-      deleteEntryTemplate: false,
-      recurringEntry: false,
+      saveShiftTemplate: false,
+      deleteShiftTemplate: false,
+      recurringShift: false,
       shiftName: '',
       hiddenElements: [] as Element[] // Elements to hide when holding a button in action bar
     };
@@ -57,8 +57,8 @@ export default {
       alert(message);
     },
 
-    quickAddEntry(shift: Shift) {
-      const newEntry = new Shift({
+    quickAddShift(shift: Shift) {
+      const newShift = new Shift({
         workplace: shift.workplace,
         payRate: shift.payRate,
         startTime: shift.startTime,
@@ -66,16 +66,16 @@ export default {
         unpaidBreaks: shift.unpaidBreaks
       });
 
-      const duration = newEntry.endTime.getTime() - newEntry.startTime.getTime();
+      const duration = newShift.endTime.getTime() - newShift.startTime.getTime();
 
-      newEntry.startTime.setFullYear(
+      newShift.startTime.setFullYear(
         this.selectedDate.getFullYear(),
         this.selectedDate.getMonth(),
         this.selectedDate.getDate()
       );
-      newEntry.endTime.setTime(newEntry.startTime.getTime() + duration);
+      newShift.endTime.setTime(newShift.startTime.getTime() + duration);
 
-      this.shiftStore.add(newEntry);
+      this.shiftStore.add(newShift);
 
       const form = this.$refs.shiftForm as HTMLFormElement;
       form.reset();
@@ -118,7 +118,7 @@ export default {
           newShifts.push(shift);
 
           // Handle recurring shifts
-          if (this.recurringEntry) {
+          if (this.recurringShift) {
             const recurringDay = Number((this.$refs['recurring-day'] as HTMLInputElement)?.value);
             const recurringMonth = Number((this.$refs['recurring-month'] as HTMLInputElement)?.value);
             const recurringYear = Number((this.$refs['recurring-year'] as HTMLInputElement)?.value);
@@ -133,7 +133,7 @@ export default {
             for (
               const currentFromDate = new Date(shift!.startTime);
               currentFromDate < recurringEndDate;
-              // Skip the first entry as it's already added
+              // Skip the first shift as it's already added
             ) {
               // Increment the currentFromDate by the recurring interval
               currentFromDate.setDate(currentFromDate.getDate() + recurringDay);
@@ -143,7 +143,7 @@ export default {
               const start = new Date(currentFromDate);
               const end = new Date(currentFromDate.getTime() + duration);
 
-              const recurringEntry = new Shift({
+              const recurringShift = new Shift({
                 workplace: shift!.workplace,
                 payRate: shift!.payRate,
                 startTime: start,
@@ -151,7 +151,7 @@ export default {
                 unpaidBreaks: shift!.unpaidBreaks
               });
 
-              newShifts.push(recurringEntry);
+              newShifts.push(recurringShift);
             }            
           }
 
@@ -269,7 +269,7 @@ export default {
     <InputLabel
       label-text="Shift Templates"
       v-if="action === 'add'"
-      v-model:toggle-value="deleteEntryTemplate"
+      v-model:toggle-value="deleteShiftTemplate"
       toggle-color="var(--danger-color)"
       sub-text="Delete"
     >
@@ -277,7 +277,7 @@ export default {
         <button
           v-for="[name, template] in shiftTemplatesStore.shiftTemplates"
           :key="name"
-          @click="deleteEntryTemplate ? shiftTemplatesStore.delete(name) : quickAddEntry(template as Shift)"
+          @click="deleteShiftTemplate ? shiftTemplatesStore.delete(name) : quickAddShift(template as Shift)"
           type="button"
           class="shift-info"
         >
@@ -285,16 +285,16 @@ export default {
         </button>
         <button
           type="button"
-          :class="['shift-info', { active: saveEntryTemplate }]"
+          :class="['shift-info', { active: saveShiftTemplate }]"
           id="save-shift-template-btn"
-          @click="saveEntryTemplate = !saveEntryTemplate"
+          @click="saveShiftTemplate = !saveShiftTemplate"
         >
           <div class="name">&nbsp;+&nbsp;</div>
         </button>
       </div>
     </InputLabel>
 
-    <InputLabel label-text="Shift Name" for-id="shift-name" v-if="saveEntryTemplate">
+    <InputLabel label-text="Shift Name" for-id="shift-name" v-if="saveShiftTemplate">
       <input
         type="text"
         id="shift-name"
@@ -454,9 +454,9 @@ export default {
       v-if="action === 'add' || action === 'check in/out'"
       label-text="Recurring?"
       for-id="recurring"
-      v-model:toggle-value="recurringEntry"
+      v-model:toggle-value="recurringShift"
     >
-      <div v-if="recurringEntry" class="recurring-inputs">
+      <div v-if="recurringShift" class="recurring-inputs">
         <span>Shift repeat every:</span>
         <input
           type="number"
@@ -517,10 +517,10 @@ export default {
           type="submit"
           name="action"
           value="add"
-          :class="['primary', { active: saveEntryTemplate }]"
+          :class="['primary', { active: saveShiftTemplate }]"
           id="add-shift-btn"
         >
-          {{ saveEntryTemplate ? 'Save & ' : '' }}Add Shift
+          {{ saveShiftTemplate ? 'Save & ' : '' }}Add Shift
         </button>
       </template>
     </div>

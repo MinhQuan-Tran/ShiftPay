@@ -14,28 +14,19 @@ export const useShiftStore = defineStore('shift', {
       const authStore = useAuthStore();
 
       try {
-        let rawData = JSON.parse(localStorage.getItem('shifts') || '[]');
+        let rawData = JSON.parse(localStorage.getItem('shifts') || localStorage.getItem('entries') || '[]');
 
         // API if authenticated; otherwise localStorage
         if (authStore.isAuthenticated) {
           rawData = await api.shifts.fetch();
         }
 
-        console.log(rawData);
+        const parsed = Shift.parseAll(rawData);
 
-        // Parse & Validate
-        this.shifts = rawData
-          .map((rawShift: unknown) => {
-            try {
-              return Shift.parse(rawShift);
-            } catch (parseError: any) {
-              console.error('Failed to parse shift from source:', rawShift, parseError);
-              return null;
-            }
-          })
-          .filter((shift: Shift | null): shift is Shift => {
-            return shift !== null;
-          });
+        this.shifts = parsed.shifts;
+        if (!parsed.success) {
+          alert('Some shifts could not be loaded.');
+        }
       } catch (error: any) {
         console.error(error);
         throw new Error('Failed to fetch shifts: ' + (error && error.message ? error.message : String(error)));
@@ -51,54 +42,44 @@ export const useShiftStore = defineStore('shift', {
       const validatedShifts: Shift[] = [];
       const invalidErrors: string[] = [];
 
-      rawItems.forEach(function (item, index) {
+      rawItems.forEach((item, index) => {
         try {
           validatedShifts.push(Shift.parse(item));
         } catch (error: any) {
-          invalidErrors.push(
-            'Item #' + index + ' is invalid: ' + (error && error.message ? error.message : String(error))
-          );
+          invalidErrors.push(`Item #${index} is invalid: ${error?.message ?? String(error)}`);
         }
       });
 
       if (invalidErrors.length) {
         throw new Error('Invalid shift input — ' + invalidErrors.join(' | '));
       }
+
       if (validatedShifts.length === 0) return;
 
       const auth = useAuthStore();
 
-      // If not authenticated, just save locally
       if (!auth.isAuthenticated) {
         this.shifts.push(...validatedShifts);
         return;
       }
 
-      // Authenticated: call API for each shift (to get IDs), collecting any failures
-      const createdShifts: Shift[] = [];
-      const apiFailures: string[] = [];
-
-      // TODO: Batch API when supported
-      for (let i = 0; i < validatedShifts.length; i++) {
-        try {
-          const created = await api.shifts.create(validatedShifts[i]);
-
+      try {
+        if (validatedShifts.length === 1) {
+          // Single-shift create
+          const created = await api.shifts.create(validatedShifts[0]);
           console.log('Created shift from API:', created);
+          const parsed = Shift.parse(created);
+          this.shifts.push(parsed);
+        } else {
+          // Batch create
+          const createdBatch = await api.shifts.createBatch(validatedShifts);
+          console.log('Created shifts from API (batch):', createdBatch);
 
-          createdShifts.push(Shift.parse(created));
-        } catch (parseError: any) {
-          apiFailures.push(
-            'Item #' + i + ': ' + (parseError && parseError.message ? parseError.message : String(parseError))
-          );
+          const parsedBatch = createdBatch.map((s: any) => Shift.parse(s));
+          this.shifts.push(...parsedBatch);
         }
-      }
-
-      if (createdShifts.length) {
-        this.shifts.push(...createdShifts);
-      }
-
-      if (apiFailures.length) {
-        throw new Error('Some shifts could not be created — ' + apiFailures.join(' | '));
+      } catch (error: any) {
+        throw new Error('Some shifts could not be created — ' + (error?.message ?? String(error)));
       }
     },
 

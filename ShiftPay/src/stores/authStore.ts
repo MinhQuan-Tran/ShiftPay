@@ -1,10 +1,26 @@
-// src/stores/auth.ts
 import { defineStore } from 'pinia';
 import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser';
 
 const scopes = ['https://shiftpay.onmicrosoft.com/api/access_as_user', 'openid', 'offline_access'];
 
-export const useAuthStore = defineStore('auth', {
+type AuthState = {
+  msalInstance: PublicClientApplication | null;
+  account: AccountInfo | null;
+  accessToken: string;
+};
+
+type AuthGetters = {
+  isAuthenticated(): boolean;
+};
+
+type AuthActions = {
+  init(): Promise<void>;
+  login(): Promise<void>;
+  fetchToken(): Promise<string>;
+  logout(): Promise<void>;
+};
+
+export const useAuthStore = defineStore<'auth', AuthState, AuthGetters, AuthActions>('auth', {
   state: () => ({
     msalInstance: null as PublicClientApplication | null,
     account: null as AccountInfo | null,
@@ -73,6 +89,8 @@ export const useAuthStore = defineStore('auth', {
   },
 
   getters: {
-    isAuthenticated: (state) => !!state.account
+    isAuthenticated() {
+      return !!this.account;
+    }
   }
 });

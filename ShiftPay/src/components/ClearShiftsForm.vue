@@ -1,5 +1,5 @@
 <script lang="ts">
-import { mapStores, mapWritableState } from 'pinia';
+import { mapStores } from 'pinia';
 
 import ButtonConfirm from './ButtonConfirm.vue';
 
@@ -26,14 +26,14 @@ export default {
   },
 
   emits: {
-    clearEntries(payload: string) {
+    clearShifts(payload: string) {
       const options = ['day', 'week', 'all'];
       return options.includes(payload);
     }
   },
 
   methods: {
-    clearEntries(event: Event) {
+    clearShifts(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
       const startTime = new Date(this.selectedDate);
@@ -91,7 +91,7 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent="clearEntries">
+  <form @submit.prevent="clearShifts">
     <span>What shifts do you want to clear?</span>
     <div>
       <input

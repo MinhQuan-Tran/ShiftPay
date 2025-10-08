@@ -65,9 +65,43 @@ export default class Shift {
     }
   }
 
-  static inRange(): string {
-    return 'inRange';
+  static parseAll(data: any[]): {
+    shifts: Shift[];
+    success: boolean;
+  } {
+    let shifts: Shift[] = [];
+    let success = true;
+
+    console.log('Parsing multiple shifts:', data);
+
+    try {
+      shifts = data
+        .map((rawShift: unknown) => {
+          try {
+            return this.parse(rawShift);
+          } catch (parseError: any) {
+            console.error('Failed to parse shift from source:', rawShift, parseError);
+            success = false;
+            return null;
+          }
+        })
+        .filter((shift: Shift | null): shift is Shift => {
+          return shift !== null;
+        });
+    } catch (error) {
+      console.error('Error parsing multiple shifts:', error);
+      success = false;
+    }
+    return {
+      shifts,
+      success
+    };
   }
+
+  // TODO
+  // static inRange(): string {
+  //   return 'inRange';
+  // }
 
   // Getters
   get id(): string {
@@ -122,10 +156,13 @@ export default class Shift {
   }
 
   // Setters (validation kept)
-  set id(id: string) {
-    if (typeof id !== 'string' || id.trim() === '') {
-      throw new Error('ID should be a non-empty string');
+  set id(id: string | number) {
+    if (typeof id !== 'number' && (typeof id !== 'string' || id.trim() === '')) {
+      throw new Error('ID must be a non-empty string or number');
     }
+
+    id = id.toString().trim();
+
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
       throw new Error('ID can only contain alphanumeric characters, underscores, and hyphens');
     }
@@ -175,7 +212,6 @@ export default class Shift {
   }
 
   toDTO(): {
-    id: string;
     workplace: string;
     payRate: number;
     startTime: string;
@@ -183,7 +219,6 @@ export default class Shift {
     unpaidBreaks: string[];
   } {
     return {
-      id: this.id,
       workplace: this.workplace,
       payRate: this.payRate,
       startTime: this.startTime.toISOString(),

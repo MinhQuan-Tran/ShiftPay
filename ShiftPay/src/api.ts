@@ -74,6 +74,10 @@ export const api = {
       return createRequest('shifts', { method: 'POST', body: shift.toDTO() });
     },
 
+    async createBatch(shifts: Shift[]) {
+      return createRequest('shifts/batch', { method: 'POST', body: shifts.map((shift) => shift.toDTO()) });
+    },
+
     async update(id: string, shift: Shift) {
       return createRequest(`shifts/${id}`, { method: 'PUT', body: shift.toDTO() });
     },
