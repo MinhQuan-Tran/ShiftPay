@@ -9,7 +9,7 @@
       "@/*": ["./src/*"]
     },
     // Follow Capacitor.js supported version
-    "target": "ES2019",
-    "lib": ["DOM", "ES2019"]
+    "target": "ES2022",
+    "lib": ["DOM", "ES2022"]
   }
 }
