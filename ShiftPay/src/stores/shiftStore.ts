@@ -98,7 +98,7 @@ export const useShiftStore = defineStore('shift', {
         const index = this.shifts.findIndex((shift) => shift.id === id);
 
         // Not found
-        if (~index) {
+        if (index === -1) {
           throw new Error('Cannot update shift: ID not found');
         }
 

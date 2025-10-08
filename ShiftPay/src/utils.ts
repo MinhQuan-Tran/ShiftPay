@@ -26,7 +26,11 @@ export function getShifts(shifts: Array<Shift>, startTime: Date, endTime: Date):
   });
 }
 
-// Shouldn't be used
+/**
+ * [DEPRECATED] Avoid using this custom deepClone implementation as it may not handle all edge cases,
+ * can be error-prone, and may have performance issues. Prefer using a well-tested library such as
+ * lodash's _.cloneDeep for deep cloning objects. This function may be removed in future releases.
+ */
 export function deepClone<T>(obj: T, hash = new WeakMap()): T {
   // Handle null, undefined, and primitives
   if (obj === null || typeof obj !== 'object') {
