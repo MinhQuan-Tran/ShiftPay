@@ -109,5 +109,10 @@
       "[Fix] Selected day not being highlighted after adding a new shift",
       "Improve user interface and experience"
     ]
+  },
+  {
+    "version": "0.3.7",
+    "date": "2025-10-08T00:00:00+1100",
+    "changes": ["[Copilot] Help me write changelog. Target is for users to read"]
   }
 ]
