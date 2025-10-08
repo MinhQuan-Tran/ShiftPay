@@ -117,8 +117,6 @@ export const useWorkInfosStore = defineStore('workInfos', {
           }
         }
       }
-
-      this.workInfos.delete(workplace);
     },
 
     /**
