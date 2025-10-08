@@ -76,7 +76,7 @@ export default {
 
 <template>
   <div class="header">
-    <h1>Payment Calculator</h1>
+    <h1>ShiftPay</h1>
     <div class="menu-btn" @click="menuOpened = !menuOpened" :class="{ open: menuOpened }">
       <div class="bar"></div>
       <div class="bar"></div>
