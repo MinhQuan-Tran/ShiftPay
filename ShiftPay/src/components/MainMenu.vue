@@ -1,5 +1,16 @@
 <script lang="ts">
+import { mapStores } from 'pinia';
+
+import { useAuthStore } from '@/stores/authStore';
+import { useShiftStore } from '@/stores/shiftStore';
+
+import Shift from '@/models/Shift';
+
 export default {
+  computed: {
+    ...mapStores(useAuthStore, useShiftStore)
+  },
+
   methods: {
     downloadData() {
       const data = JSON.stringify(localStorage);
@@ -18,7 +29,7 @@ export default {
       const fileInput = event.target as HTMLInputElement;
       const file = fileInput.files ? fileInput.files[0] : null;
 
-      if (!file) return; // Do nothing if no file is selected
+      if (!file) return;
 
       const reader = new FileReader();
 
@@ -26,20 +37,29 @@ export default {
         try {
           const data = JSON.parse(e.target?.result as string);
 
-          // Clear existing localStorage data and add new data
-          localStorage.clear();
-          Object.keys(data).forEach((key) => {
-            localStorage.setItem(key, data[key]);
-          });
-        } catch (error) {
-          // Silent error, you can add console.log for debugging
-          console.error('Invalid JSON file', error);
-        }
+          console.log('Imported data:', data);
 
-        alert('Data imported successfully, please refresh the page to see the changes.');
+          const parsed = Shift.parseAll(JSON.parse(data.shifts || data.entries));
+
+          if (!parsed.success && !confirm('Some shifts could not be loaded. Do you want to proceed?')) {
+            throw new Error('User aborted due to parse errors.');
+          }
+
+          this.shiftStore.add(parsed.shifts).then(() => {
+            console.log('Shifts added successfully.');
+          })
+        } catch (error: any) {
+          throw new Error('Failed to import data: ' + (error && error.message ? error.message : String(error)));
+        }
       };
 
       reader.readAsText(file);
+    },
+
+    async handleLogin() {
+      await this.authStore.login();
+
+      await this.shiftStore.fetch();
     }
   }
 };
@@ -49,6 +69,8 @@ export default {
   <div class="main-menu">
     <input type="file" id="fileInput" accept=".json" @change="uploadData" />
     <button id="downloadButton" @click="downloadData">Download Data</button>
+    <button v-if="!authStore.isAuthenticated" @click="handleLogin">Login</button>
+    <button v-else @click="authStore.logout">Logout</button>
   </div>
 </template>
 

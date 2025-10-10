@@ -8,7 +8,9 @@ export default {
       default: false
     }
   },
+
   emits: ['update:value', 'delete-item'],
+
   computed: {
     filteredList() {
       if (!this.value) return this.list || [];
@@ -16,6 +18,7 @@ export default {
       return this.list?.filter((item) => item.toLowerCase().includes(this.value!.toLowerCase())) || [];
     }
   },
+  
   created() {
     this.$nextTick(() => {
       const input = (this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement;

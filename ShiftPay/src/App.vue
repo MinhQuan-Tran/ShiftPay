@@ -3,7 +3,8 @@ import packageJson from '@/../package.json';
 import changelog from '@/../changelog.json';
 
 import { mapStores } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { useAuthStore } from './stores/authStore';
+import { useShiftStore } from '@/stores/shiftStore';
 
 import MainMenu from '@/components/MainMenu.vue';
 import WeekSchedule from '@/components/WeekSchedule.vue';
@@ -51,8 +52,10 @@ export default {
   },
 
   computed: {
-    ...mapStores(useUserDataStore)
+    ...mapStores(useAuthStore),
+    ...mapStores(useShiftStore)
   },
+
   components: {
     MainMenu,
     WeekSchedule,
@@ -60,22 +63,8 @@ export default {
     BaseDialog
   },
 
-  mounted() {
-    window.addEventListener('storage', this.userDataStore.handleStorageChange);
-
-    // Run once when mounted
-    Object.entries(this.userDataStore.$state).forEach(([key, value]) => {
-      // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
-      this.userDataStore.saveToLocalStorage(key, value);
-    });
-
-    // Run on update
-    this.userDataStore.$subscribe((mutation, state) => {
-      for (const [key, value] of Object.entries(state)) {
-        // this.userDataStore.saveToLocalStorage(key, this.userDataStore.fixState(key, value));
-        this.userDataStore.saveToLocalStorage(key, value);
-      }
-    });
+  async mounted() {
+    this.shiftStore.fetch();
 
     const currentVersion = localStorage.getItem('appVersion');
     if (currentVersion !== packageJson.version) {
@@ -87,7 +76,7 @@ export default {
 
 <template>
   <div class="header">
-    <h1>Payment Calculator</h1>
+    <h1>ShiftPay</h1>
     <div class="menu-btn" @click="menuOpened = !menuOpened" :class="{ open: menuOpened }">
       <div class="bar"></div>
       <div class="bar"></div>

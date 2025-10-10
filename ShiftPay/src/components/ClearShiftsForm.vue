@@ -1,8 +1,9 @@
 <script lang="ts">
-import { mapWritableState } from 'pinia';
-import { useUserDataStore } from '@/stores/userData';
+import { mapStores } from 'pinia';
 
 import ButtonConfirm from './ButtonConfirm.vue';
+
+import { useShiftStore } from '@/stores/shiftStore';
 
 export default {
   props: {
@@ -21,18 +22,18 @@ export default {
   },
 
   computed: {
-    ...mapWritableState(useUserDataStore, ['entries'])
+    ...mapStores(useShiftStore),
   },
 
   emits: {
-    clearEntries(payload: string) {
+    clearShifts(payload: string) {
       const options = ['day', 'week', 'all'];
       return options.includes(payload);
     }
   },
 
   methods: {
-    clearEntries(event: Event) {
+    clearShifts(event: Event) {
       const form = event.currentTarget as HTMLFormElement;
 
       const startTime = new Date(this.selectedDate);
@@ -52,23 +53,23 @@ export default {
           // => if the current day is Sunday, the start time will be 6 days before the current date
           startTime.setDate(startTime.getDate() - (startTime.getDay() == 0 ? 7 : startTime.getDay() - 1)); // Monday
           endTime.setDate(endTime.getDate() - (endTime.getDay() == 0 ? 7 : endTime.getDay() - 1) + 7); // Sunday
-        // Then filter out entries like in the 'day' case
+        // Then filter out shifts like in the 'day' case
 
         // eslint-disable-next-line no-fallthrough
         case 'day':
           console.log(startTime, endTime);
 
-          this.entries = this.entries.filter((entry) => {
-            const fromTime = new Date(entry.from);
-            const toTime = new Date(entry.to);
+          this.shiftStore.shifts = this.shiftStore.shifts.filter((shift) => {
+            const fromTime = new Date(shift.startTime);
+            const toTime = new Date(shift.endTime);
 
-            // Filter out entries that intersect with the time range
+            // Filter out shifts that intersect with the time range
             return !(fromTime <= endTime && toTime >= startTime);
           });
           break;
 
         case 'all':
-          this.entries = [];
+          this.shiftStore.shifts = [];
           break;
 
         default:
@@ -90,8 +91,8 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent="clearEntries">
-    <span>What entries do you want to clear?</span>
+  <form @submit.prevent="clearShifts">
+    <span>What shifts do you want to clear?</span>
     <div>
       <input
         type="radio"
