@@ -112,7 +112,11 @@
   },
   {
     "version": "0.3.7",
-    "date": "2025-10-08T00:00:00+1100",
-    "changes": ["[Copilot] Help me write changelog. Target is for users to read"]
+    "date": "2025-10-10T00:00:00+1100",
+    "changes": [
+      "Change the keyword 'Entry' to 'Shift' for better clarity",
+      "Change the website name to 'ShiftPay'",
+      "[Feature - Beta] Online user authentication and data access across devices"
+    ]
   }
 ]
