@@ -2,7 +2,7 @@
 
 ## Live Product
 
-[https://payment-calculator-mqtran.netlify.app/](https://payment-calculator-mqtran.netlify.app/)
+[https://shiftpay-mqtran.netlify.app/](https://shiftpay-mqtran.netlify.app/)
 
 ## Architecture and Flows (C4 Model)
 
