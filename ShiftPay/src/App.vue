@@ -71,7 +71,7 @@ export default {
       (this.$refs['changelog-dialog'] as any).showModal();
     }
 
-    if (!window.location.href.includes('https://shiftpay-mqtran.netlify.app/') && !window.location.href.includes('localhost')) {
+    if (!window.location.hostname.includes('shiftpay-mqtran.netlify.app') && !window.location.hostname.includes('localhost')) {
       alert('The website is being moved to [ https://shiftpay-mqtran.netlify.app/ ] \n\nUsing the menu on the top right: \n- Please download and upload the data manually to the new site. \n- Alternatively, please login to sync data. \n\nThe current site will be taken down soon. Thank you!');
     }
   }
