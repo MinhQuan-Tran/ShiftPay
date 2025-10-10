@@ -116,6 +116,7 @@
     "changes": [
       "Change the keyword 'Entry' to 'Shift' for better clarity",
       "Change the website name to 'ShiftPay'",
+      "Change the URL to 'https://shiftpay-mqtran.netlify.app/'",
       "[Feature - Beta] Online user authentication and data access across devices"
     ]
   }
