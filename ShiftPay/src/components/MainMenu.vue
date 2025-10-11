@@ -65,9 +65,9 @@ export default {
 
         const templates = new Promise<Map<string, Shift>>((resolve, reject) => {
           try {
-            const parsedTemplates = Object.entries(JSON.parse(data.shiftTemplates || data.templates)).reduce((acc: any, [name, template]: [string, any]) => {
+            const parsedTemplates: Map<string, Shift> = Object.entries(JSON.parse(data.shiftTemplates || data.templates)).reduce((acc: any, [name, template]: [string, any]) => {
               try {
-                acc[name] = Shift.parse(template.shift || template.entry || template);
+                acc.set(name, Shift.parse(template.shift || template.entry || template));
               } catch (error) {
                 if (!confirm(`Failed to parse template "${name}". Do you want to skip it?`)) {
                   // Stop import process
