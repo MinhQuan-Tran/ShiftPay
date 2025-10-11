@@ -8,12 +8,27 @@ export const useCheckInTimeStore = defineStore('checkInTime', {
   }),
 
   actions: {
-    set(date: Date | undefined) {
-      this.checkInTime = date;
+    async fetch(): Promise<void> {
+      // Load from localStorage
+      const rawData = localStorage.getItem('checkInTime');
+
+      if (rawData) {
+        const date = new Date(rawData);
+
+        if (!isNaN(date.getTime())) {
+          return this.set(date);
+        }
+      }
+
+      this.clear();
+    },
+
+    set(date?: Date) {
+      this.checkInTime = date ?? new Date();
     },
 
     clear() {
-      this.set(undefined);
+      this.checkInTime = undefined;
     },
 
     /**

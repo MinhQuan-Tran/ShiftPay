@@ -5,6 +5,9 @@ import changelog from '@/../changelog.json';
 import { mapStores } from 'pinia';
 import { useAuthStore } from './stores/authStore';
 import { useShiftStore } from '@/stores/shiftStore';
+import { useShiftTemplatesStore } from '@/stores/shiftTemplateStore';
+import { useWorkInfosStore } from '@/stores/workInfoStore';
+import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
 
 import MainMenu from '@/components/MainMenu.vue';
 import WeekSchedule from '@/components/WeekSchedule.vue';
@@ -29,7 +32,7 @@ export default {
       const currentVersion = localStorage.getItem('appVersion')?.split('.').map(Number) || [0, 0, 0];
 
       return changelog
-        .filter((log: { version: string; date: string; changes: string[] }) => {
+        .filter((log: { version: string; date: string; changes: string[]; }) => {
           const logVersion = log.version.split('.').map(Number);
 
           // Compare version numbers
@@ -52,8 +55,7 @@ export default {
   },
 
   computed: {
-    ...mapStores(useAuthStore),
-    ...mapStores(useShiftStore)
+    ...mapStores(useAuthStore, useShiftStore, useShiftTemplatesStore, useWorkInfosStore, useCheckInTimeStore),
   },
 
   components: {
@@ -64,13 +66,25 @@ export default {
   },
 
   async mounted() {
-    this.shiftStore.fetch();
+    // Enable Auto Persist
+    this.shiftStore.enableAutoPersist();
+    this.shiftTemplatesStore.enableAutoPersist();
+    this.workInfosStore.enableAutoPersist();
+    this.checkInTimeStore.enableAutoPersist();
 
+    // Fetch initial data
+    this.shiftStore.fetch();
+    this.shiftTemplatesStore.fetch();
+    this.workInfosStore.fetch();
+    this.checkInTimeStore.fetch();
+
+    // Show changelog if app version is different
     const currentVersion = localStorage.getItem('appVersion');
     if (currentVersion !== packageJson.version) {
       (this.$refs['changelog-dialog'] as any).showModal();
     }
 
+    // Notify user if not on the main site
     if (!window.location.hostname.includes('shiftpay-mqtran.netlify.app') && !window.location.hostname.includes('localhost')) {
       alert('The website is being moved to [ https://shiftpay-mqtran.netlify.app/ ] \n\nUsing the menu on the top right: \n- Please download and upload the data manually to the new site. \n- Alternatively, please login to sync data. \n\nThe current site will be taken down soon. Thank you!');
     }

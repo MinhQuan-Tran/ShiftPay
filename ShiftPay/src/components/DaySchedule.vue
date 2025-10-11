@@ -28,12 +28,12 @@ export default {
         action: '',
         placeholderShift: undefined as
           | {
-              id?: string;
-              workplace?: string;
-              payRate?: number;
-              startTime?: Date;
-              endTime?: Date;
-            }
+            id?: string;
+            workplace?: string;
+            payRate?: number;
+            startTime?: Date;
+            endTime?: Date;
+          }
           | undefined
       },
       datetimeWidth: 'auto'
@@ -59,21 +59,21 @@ export default {
       // If not checked in
       if (!this.isCheckIn) {
         // Check in
-        this.checkInTimeStore.checkInTime = new Date();
+        this.checkInTimeStore.set();
         return;
       }
 
       // If no check in time found
       if (!this.checkInTimeStore.checkInTime) {
         if (confirm('Check in time is not set. Do you want to set it now?')) {
-          this.checkInTimeStore.checkInTime = new Date();
+          this.checkInTimeStore.set();
         }
         return;
       }
 
       if (isNaN(this.checkInTimeStore.checkInTime.getTime())) {
         if (confirm('Invalid check in time. Do you want to remove it?')) {
-          this.checkInTimeStore.checkInTime = undefined;
+          this.checkInTimeStore.clear();
         }
         return;
       }
@@ -119,7 +119,7 @@ export default {
   computed: {
     ...mapStores(useShiftStore),
     ...mapStores(useCheckInTimeStore),
-    
+
     isCheckIn() {
       return this.checkInTimeStore.checkInTime !== undefined;
     },
@@ -155,13 +155,9 @@ export default {
       <button @click="($refs.clearShiftsDialog as any).showModal()" class="danger" id="clear-btn">Clear</button>
 
       <Transition>
-        <button
-          v-if="selectedDate.setHours(0, 0, 0, 0) == new Date().setHours(0, 0, 0, 0)"
-          @click="handleCheckInOut"
-          id="check-in-out-btn"
-          :class="{ primary: !isCheckIn, warning: isCheckIn }"
-        >
-          Check {{ isCheckIn ? 'Out' : 'In' }}
+        <button v-if="selectedDate.setHours(0, 0, 0, 0) == new Date().setHours(0, 0, 0, 0)" @click="handleCheckInOut"
+          id="check-in-out-btn" :class="{ primary: !isCheckIn, warning: isCheckIn }">
+          Check-{{ isCheckIn ? 'Out' : 'In' }}
         </button>
       </Transition>
 
@@ -169,25 +165,14 @@ export default {
     </div>
 
     <div class="shift-list">
-      <DayScheduleShift
-        v-for="shift in shifts!.sort((a: Shift, b: Shift) => {
-          // Sort by startTime, then by endTime
-          return a.startTime.getTime() - b.startTime.getTime() || a.endTime.getTime() - b.endTime.getTime();
-        })"
-        :key="shift.id"
-        :shift="shift"
-        :selected-date="selectedDate"
-        @edit-shift="handleEditShift"
-      />
+      <DayScheduleShift v-for="shift in shifts!.sort((a: Shift, b: Shift) => {
+        // Sort by startTime, then by endTime
+        return a.startTime.getTime() - b.startTime.getTime() || a.endTime.getTime() - b.endTime.getTime();
+      })" :key="shift.id" :shift="shift" :selected-date="selectedDate" @edit-shift="handleEditShift" />
     </div>
 
-    <BaseDialog
-      ref="clearShiftsDialog"
-      title="Clear Shifts"
-      open-dialog-text="Clear"
-      class="danger"
-      :reset-forms="true"
-    >
+    <BaseDialog ref="clearShiftsDialog" title="Clear Shifts" open-dialog-text="Clear" class="danger"
+      :reset-forms="true">
       <ClearShiftsForm :selected-date="selectedDate" />
     </BaseDialog>
 
@@ -212,7 +197,7 @@ export default {
   margin-bottom: var(--padding);
 }
 
-.actions > * {
+.actions>* {
   flex: 1;
   text-wrap: nowrap;
 }

@@ -12,29 +12,27 @@ export const useWorkInfosStore = defineStore('workInfos', {
     async fetch(): Promise<void> {
       // const auth = useAuthStore();
 
-      try {
-        const rawData = localStorage.getItem('prevWorkInfos') || '{}';
+      const rawData = localStorage.getItem('prevWorkInfos') || '{}';
 
-        // if (auth.isAuthenticated) {
-        //   rawData = await api.prevWorkInfos.fetch();
-        // }
+      // if (auth.isAuthenticated) {
+      //   rawData = await api.prevWorkInfos.fetch();
+      // }
 
-        // Parse & Validate
-        this.workInfos = JSON.parse(rawData, function (_, value) {
-          if (typeof value === 'object' && value !== null) {
-            // Convert payRates array to Set
-            if (Array.isArray(value.payRates)) {
-              value.payRates = new Set(value.payRates);
+      // Parse & Validate
+      this.workInfos = new Map<string, WorkInfo>(
+        Object.entries(
+          JSON.parse(rawData, function (_, value) {
+            if (typeof value === 'object' && value !== null) {
+              // Convert payRates array to Set
+              if (Array.isArray(value.payRates)) {
+                value.payRates = new Set(value.payRates);
+              }
             }
-          }
 
-          return value;
-        });
-      } catch (error: any) {
-        throw new Error(
-          'Failed to fetch previous work info: ' + (error && error.message ? error.message : String(error))
-        );
-      }
+            return value;
+          })
+        )
+      );
     },
 
     async add(workplace: string, payRate: number): Promise<void> {
