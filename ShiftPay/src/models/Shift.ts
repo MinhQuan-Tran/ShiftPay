@@ -75,9 +75,6 @@ export default class Shift {
     let shifts: Shift[] = [];
     let success = true;
 
-    console.log('Parsing multiple shifts:');
-    console.table(data);
-
     try {
       shifts = data
         .map((rawShift: unknown) => {
