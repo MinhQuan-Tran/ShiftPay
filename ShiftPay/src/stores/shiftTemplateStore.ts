@@ -14,7 +14,7 @@ export const useShiftTemplatesStore = defineStore('shiftTemplates', {
         const rawData = localStorage.getItem('shiftTemplates') || '{}';
 
         // Parse & Validate
-        this.shiftTemplates = new Map(
+        this.shiftTemplates = new Map<string, Shift>(
           Object.entries(JSON.parse(rawData))
             .map(([name, rawTemplate]) => {
               try {

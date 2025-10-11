@@ -24,45 +24,48 @@ export default class Shift {
   }
 
   static parse(data: any): Shift {
-    try {
-      if (!data) throw new Error('Shift data is undefined');
+    if (!data) throw new Error('Shift data is undefined');
 
-      // Pull values from either plain or underscored shapes
-      const id = data.id ?? data._id;
-      const workplace = data.workplace ?? data._workplace;
-      const payRate = data.payRate ?? data._payRate;
-      const startRaw = data.startTime ?? data._startTime ?? data.from ?? data._from;
-      const endRaw = data.endTime ?? data._endTime ?? data.to ?? data._to;
+    // Pull values from either plain or underscored shapes
+    const id = data.id ?? data._id;
+    const workplace = data.workplace ?? data._workplace;
+    const payRate = data.payRate ?? data._payRate;
+    const startRaw = data.startTime ?? data._startTime ?? data.from ?? data._from;
+    const endRaw = data.endTime ?? data._endTime ?? data.to ?? data._to;
 
-      // Basic validation (don’t reject 0 payRate)
-      if (id == null || workplace == null || startRaw == null || endRaw == null || payRate == null) {
-        throw new Error('Missing required shift fields');
-      }
-
-      const startTime = new Date(startRaw);
-      const endTime = new Date(endRaw);
-
-      // Build unpaid breaks array as Duration[]
-      const rawBreaks = Array.isArray(data.unpaidBreaks)
-        ? data.unpaidBreaks
-        : Array.isArray(data._unpaidBreaks)
-          ? data._unpaidBreaks
-          : [];
-
-      const unpaidBreaks = rawBreaks.map((ub: any) => (ub instanceof Duration ? ub : new Duration(ub)));
-
-      return new Shift({
+    // Basic validation (don’t reject 0 payRate)
+    if (id == null || workplace == null || startRaw == null || endRaw == null || payRate == null) {
+      console.error('Missing required shift fields in data:', {
         id,
         workplace,
-        payRate: Number(payRate),
-        startTime,
-        endTime,
-        unpaidBreaks
+        payRate,
+        startRaw,
+        endRaw,
+        original: data
       });
-    } catch (e) {
-      console.error('Error parsing shift:', e, data);
-      throw e;
+      throw new Error('Missing required shift fields');
     }
+
+    const startTime = new Date(startRaw);
+    const endTime = new Date(endRaw);
+
+    // Build unpaid breaks array as Duration[]
+    const rawBreaks = Array.isArray(data.unpaidBreaks)
+      ? data.unpaidBreaks
+      : Array.isArray(data._unpaidBreaks)
+        ? data._unpaidBreaks
+        : [];
+
+    const unpaidBreaks = rawBreaks.map((ub: any) => (ub instanceof Duration ? ub : new Duration(ub)));
+
+    return new Shift({
+      id,
+      workplace,
+      payRate: Number(payRate),
+      startTime,
+      endTime,
+      unpaidBreaks
+    });
   }
 
   static parseAll(data: any[]): {
@@ -72,7 +75,8 @@ export default class Shift {
     let shifts: Shift[] = [];
     let success = true;
 
-    console.log('Parsing multiple shifts:', data);
+    console.log('Parsing multiple shifts:');
+    console.table(data);
 
     try {
       shifts = data

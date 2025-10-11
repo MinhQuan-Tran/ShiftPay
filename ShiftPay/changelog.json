@@ -119,5 +119,14 @@
       "Change the URL to 'https://shiftpay-mqtran.netlify.app/'",
       "[Feature - Beta] Online user authentication and data access across devices"
     ]
+  },
+  {
+    "version": "0.3.8",
+    "date": "2025-10-11T00:00:00+1100",
+    "changes": [
+      "[Fix] Importing data from JSON not working correctly",
+      "[Fix] Clearing check-in time not working correctly",
+      "[Fix] Local data not saving correctly when updated"
+    ]
   }
 ]
