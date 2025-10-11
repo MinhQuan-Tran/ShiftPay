@@ -65,7 +65,7 @@ export default {
 
         const templates = new Promise<Map<string, Shift>>((resolve, reject) => {
           try {
-            const parsedTemplates = new Map<string, Shift>(Object.entries(JSON.parse(data.shiftTemplates || data.templates)).reduce((acc: any, [name, template]: [string, any]) => {
+            const parsedTemplates = Object.entries(JSON.parse(data.shiftTemplates || data.templates)).reduce((acc: any, [name, template]: [string, any]) => {
               try {
                 acc[name] = Shift.parse(template.shift || template.entry || template);
               } catch (error) {
@@ -79,7 +79,7 @@ export default {
               }
 
               return acc;
-            }, []));
+            }, new Map<string, Shift>());
             console.log('Templates:', parsedTemplates);
 
             if (typeof parsedTemplates !== 'object' || parsedTemplates === null) {
@@ -95,7 +95,7 @@ export default {
 
         const workInfos = new Promise<Map<string, WorkInfo>>((resolve, reject) => {
           try {
-            const parsedWorkInfos = new Map<string, WorkInfo>(Object.entries(JSON.parse(data.workInfos || data.prevWorkInfos)).reduce((acc: any, [workplace, info]: [string, any]) => {
+            const parsedWorkInfos: Map<string, WorkInfo> = Object.entries(JSON.parse(data.workInfos || data.prevWorkInfos)).reduce((acc: any, [workplace, info]: [string, any]) => {
               if (typeof info !== 'object' || info === null) {
                 if (!confirm(`Invalid data for workplace "${workplace}". Do you want to skip it?`)) {
                   // Stop import process
@@ -113,9 +113,9 @@ export default {
                   throw new Error(`Invalid pay rates for workplace "${workplace}".`);
                 }
 
-                acc[workplace] = {
+                acc.set(workplace, {
                   payRates
-                } as WorkInfo;
+                } as WorkInfo);
               } catch (error) {
                 if (!confirm(`Failed to parse pay rates for workplace "${workplace}". Do you want to skip it?`)) {
                   // Stop import process
@@ -127,7 +127,7 @@ export default {
               }
 
               return acc;
-            }, []));
+            }, new Map<string, WorkInfo>());
             console.log('Work Infos:', parsedWorkInfos);
 
             if (typeof parsedWorkInfos !== 'object' || parsedWorkInfos === null) {
