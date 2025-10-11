@@ -152,7 +152,7 @@ export default {
             const parsedCheckInTime = new Date(data.checkInTime);
 
             if (isNaN(parsedCheckInTime.getTime())) {
-              if (confirm('Invalid Check-In Time. Do you want to skip it?')) {
+              if (!confirm('Invalid Check-In Time. Do you want to skip it?')) {
                 // Stop import process
                 throw new Error('User aborted due to parse errors.');
               }
