@@ -4,6 +4,7 @@ import { currencyFormat, toTimeStr } from '@/utils';
 
 import { mapStores } from 'pinia';
 import { useShiftsStore } from '@/stores/shiftStore';
+import { useShiftSessionStore } from '@/stores/shiftSessionStore';
 
 import DayScheduleShift from '@/components/DayScheduleShiftCard.vue';
 import BaseDialog from '@/components/BaseDialog.vue';
@@ -36,9 +37,6 @@ export default {
           | undefined
       },
       datetimeWidth: 'auto',
-      checkInTime: localStorage.getItem('checkInTime')
-        ? new Date(localStorage.getItem('checkInTime') as string)
-        : undefined
     };
   },
 
@@ -60,17 +58,16 @@ export default {
     },
 
     handleCheckInOut() {
-      // If no check in time found
-      if (this.checkInTime === undefined) {
-        if (confirm('Check in time is not set. Do you want to set it now?')) {
-          this.checkInTime = new Date();
-        }
+      // If not checked in
+      if (!this.shiftSessionStore.isCheckedIn) {
+        // Check in
+        this.shiftSessionStore.set();
         return;
       }
 
-      if (isNaN(this.checkInTime.getTime())) {
+      if (isNaN(this.shiftSessionStore.checkInTime!.getTime())) {
         if (confirm('Invalid check in time. Do you want to remove it?')) {
-          this.checkInTime = undefined;
+          this.shiftSessionStore.checkInTime = undefined;
         }
         return;
       }
@@ -81,7 +78,7 @@ export default {
         resetForm: false,
         action: 'check in/out',
         placeholderShift: {
-          startTime: this.checkInTime,
+          startTime: this.shiftSessionStore.checkInTime,
           endTime: new Date()
         }
       };
@@ -115,11 +112,7 @@ export default {
   },
 
   computed: {
-    ...mapStores(useShiftsStore),
-
-    isCheckIn() {
-      return this.checkInTime !== undefined && !isNaN(this.checkInTime.getTime());
-    },
+    ...mapStores(useShiftsStore, useShiftSessionStore),
   },
 
   mounted() {
@@ -129,16 +122,6 @@ export default {
   updated() {
     this.updateTimeWidth();
   },
-
-  watch: {
-    checkInTime(newTime) {
-      if (newTime) {
-        localStorage.setItem('checkInTime', newTime.toISOString());
-      } else {
-        localStorage.removeItem('checkInTime');
-      }
-    }
-  }
 };
 </script>
 
@@ -149,8 +132,9 @@ export default {
 
       <Transition>
         <button v-if="selectedDate.setHours(0, 0, 0, 0) == new Date().setHours(0, 0, 0, 0)" @click="handleCheckInOut"
-          id="check-in-out-btn" :class="{ primary: !isCheckIn, warning: isCheckIn }">
-          Check-{{ isCheckIn ? 'Out' : 'In' }}
+          id="check-in-out-btn"
+          :class="{ primary: !shiftSessionStore.isCheckedIn, warning: shiftSessionStore.isCheckedIn }">
+          Check-{{ shiftSessionStore.isCheckedIn ? 'Out' : 'In' }}
         </button>
       </Transition>
 

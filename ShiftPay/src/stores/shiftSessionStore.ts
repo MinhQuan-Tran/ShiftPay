@@ -2,12 +2,12 @@ import { defineStore } from 'pinia';
 
 export const useShiftSessionStore = defineStore('shiftSession', {
   state: () => ({
-    time: undefined as Date | undefined
+    checkInTime: undefined as Date | undefined
   }),
 
   getters: {
     isCheckedIn(state): boolean {
-      return state.time instanceof Date && !isNaN(state.time.getTime());
+      return state.checkInTime instanceof Date && !isNaN(state.checkInTime.getTime());
     }
   },
 
@@ -28,11 +28,11 @@ export const useShiftSessionStore = defineStore('shiftSession', {
     },
 
     set(date?: Date) {
-      this.time = date ?? new Date();
+      this.checkInTime = date ?? new Date();
     },
 
     clear() {
-      this.time = undefined;
+      this.checkInTime = undefined;
     },
 
     /**
@@ -42,8 +42,8 @@ export const useShiftSessionStore = defineStore('shiftSession', {
     enableAutoPersist(): void {
       this.$subscribe(
         function (_mutation, state) {
-          if (state.time instanceof Date) {
-            localStorage.setItem('checkInTime', state.time.toISOString());
+          if (state.checkInTime instanceof Date) {
+            localStorage.setItem('checkInTime', state.checkInTime.toISOString());
           } else {
             localStorage.removeItem('checkInTime');
           }

@@ -59,6 +59,8 @@ export const useShiftsStore = defineStore('shifts', {
         if (!parsed.success) {
           alert('Some shifts could not be loaded.');
         }
+
+        localStorage.removeItem('entries'); // Remove old key
       } catch (error: any) {
         console.error(error);
         throw new Error('Failed to fetch shifts: ' + (error && error.message ? error.message : String(error)));
@@ -156,23 +158,35 @@ export const useShiftsStore = defineStore('shifts', {
 
       if (authStore.isAuthenticated) {
         try {
-          api.shifts.delete(input).then(() => {
-            if (typeof input === 'string') {
-              this.shifts = this.shifts.filter((shift) => shift.id !== input);
-              return;
-            }
-
-            if (Array.isArray(input)) {
-              this.shifts = this.shifts.filter((shift) => input.includes(shift.id));
-            }
-
-            this.shifts = [];
-          });
+          await api.shifts.delete(input);
         } catch (error: any) {
           throw new Error('Failed to delete shift: ' + (error && error.message ? error.message : String(error)));
         }
       }
-      return;
+
+      switch (typeof input) {
+        case 'string':
+          this.shifts = this.shifts.filter((shift) => shift.id !== input);
+          break;
+
+        case 'object':
+          if (Array.isArray(input)) {
+            this.shifts = this.shifts.filter((shift) => !input.includes(shift.id));
+          } else if (input === null) {
+            // treat null like no input (optional)
+            this.shifts = [];
+          } else {
+            throw new Error('Invalid object input for delete');
+          }
+          break;
+
+        case 'undefined':
+          this.shifts = [];
+          break;
+
+        default:
+          throw new Error('Invalid input type for delete');
+      }
     },
 
     /**
