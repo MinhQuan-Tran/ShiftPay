@@ -165,8 +165,7 @@ export const useShiftsStore = defineStore('shifts', {
       }
 
       // Single shift ID
-      if (input instanceof String || typeof input === 'string')
-        this.shifts = this.shifts.filter((shift) => shift.id !== input);
+      if (typeof input === 'string') this.shifts = this.shifts.filter((shift) => shift.id !== input);
       // Multiple shift IDs
       else if (Array.isArray(input)) this.shifts = this.shifts.filter((shift) => !input.includes(shift.id));
       // Clear all shifts
