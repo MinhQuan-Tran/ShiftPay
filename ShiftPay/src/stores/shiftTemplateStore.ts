@@ -5,7 +5,7 @@ import Shift from '@/models/Shift';
 
 export const useShiftTemplatesStore = defineStore('shiftTemplates', {
   state: () => ({
-    shiftTemplates: new Map<string, Shift>()
+    templates: new Map<string, Shift>()
   }),
 
   actions: {
@@ -14,7 +14,7 @@ export const useShiftTemplatesStore = defineStore('shiftTemplates', {
         const rawData = localStorage.getItem('shiftTemplates') || '{}';
 
         // Parse & Validate
-        this.shiftTemplates = new Map<string, Shift>(
+        this.templates = new Map<string, Shift>(
           Object.entries(JSON.parse(rawData))
             .map(([name, rawTemplate]) => {
               try {
@@ -32,11 +32,11 @@ export const useShiftTemplatesStore = defineStore('shiftTemplates', {
     },
 
     async add(name: string, template: Shift) {
-      this.shiftTemplates.set(String(name), template);
+      this.templates.set(String(name), template);
     },
 
     async delete(name: string) {
-      this.shiftTemplates.delete(String(name));
+      this.templates.delete(String(name));
     },
 
     /**
@@ -46,7 +46,7 @@ export const useShiftTemplatesStore = defineStore('shiftTemplates', {
     enableAutoPersist(): void {
       this.$subscribe(
         function (_mutation, state) {
-          localStorage.setItem('shiftTemplates', JSON.stringify(Object.fromEntries(state.shiftTemplates)));
+          localStorage.setItem('shiftTemplates', JSON.stringify(Object.fromEntries(state.templates)));
         },
         { detached: true }
       );

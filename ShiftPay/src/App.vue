@@ -4,10 +4,10 @@ import changelog from '@/../changelog.json';
 
 import { mapStores } from 'pinia';
 import { useAuthStore } from './stores/authStore';
-import { useShiftStore } from '@/stores/shiftStore';
+import { useShiftsStore } from '@/stores/shiftStore';
 import { useShiftTemplatesStore } from '@/stores/shiftTemplateStore';
 import { useWorkInfosStore } from '@/stores/workInfoStore';
-import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
+import { useShiftSessionStore } from '@/stores/shiftSessionStore';
 
 import MainMenu from '@/components/MainMenu.vue';
 import WeekSchedule from '@/components/WeekSchedule.vue';
@@ -55,7 +55,7 @@ export default {
   },
 
   computed: {
-    ...mapStores(useAuthStore, useShiftStore, useShiftTemplatesStore, useWorkInfosStore, useCheckInTimeStore),
+    ...mapStores(useAuthStore, useShiftsStore, useShiftTemplatesStore, useWorkInfosStore, useShiftSessionStore),
   },
 
   components: {
@@ -67,16 +67,16 @@ export default {
 
   async mounted() {
     // Enable Auto Persist
-    this.shiftStore.enableAutoPersist();
+    this.shiftsStore.enableAutoPersist();
     this.shiftTemplatesStore.enableAutoPersist();
     this.workInfosStore.enableAutoPersist();
-    this.checkInTimeStore.enableAutoPersist();
+    this.shiftSessionStore.enableAutoPersist();
 
     // Fetch initial data
-    this.shiftStore.fetch();
+    this.shiftsStore.fetch();
     this.shiftTemplatesStore.fetch();
     this.workInfosStore.fetch();
-    this.checkInTimeStore.fetch();
+    this.shiftSessionStore.fetch();
 
     // Show changelog if app version is different
     const currentVersion = localStorage.getItem('appVersion');

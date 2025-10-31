@@ -82,8 +82,20 @@ export const api = {
       return createRequest(`shifts/${id}`, { method: 'PUT', body: shift.toDTO() });
     },
 
-    async delete(id: string) {
-      return createRequest(`shifts/${id}`, { method: 'DELETE' });
+    async delete(input: string | string[] | undefined) {
+      // Delete single shift by ID
+      if (typeof input === 'string') {
+        return createRequest(`shifts/${input}`, { method: 'DELETE' });
+      }
+
+      // Delete multiple shifts by IDs
+      if (Array.isArray(input)) {
+        const queryParams: QueryParams = { id: input.join(',') };
+        return createRequest('shifts', { method: 'DELETE', queryParams });
+      }
+
+      // Delete all shifts
+      return createRequest('shifts', { method: 'DELETE' });
     }
   },
 

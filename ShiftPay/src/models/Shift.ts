@@ -6,7 +6,7 @@ export type ShiftParams = {
   payRate: number;
   startTime: Date;
   endTime: Date;
-  unpaidBreaks: Duration[];
+  unpaidBreaks?: Duration[];
 };
 
 export default class Shift {
@@ -15,7 +15,7 @@ export default class Shift {
   private _payRate: number = 0;
   private _startTime: Date = new Date();
   private _endTime: Date = new Date();
-  private _unpaidBreaks: Duration[] = [];
+  private _unpaidBreaks?: Duration[] = [];
 
   // Short, tidy constructor. `id` first, auto-generated if omitted.
   constructor({ id = crypto.randomUUID(), ...rest }: ShiftParams) {
@@ -56,7 +56,9 @@ export default class Shift {
         ? data._unpaidBreaks
         : [];
 
-    const unpaidBreaks = rawBreaks.map((ub: any) => (ub instanceof Duration ? ub : new Duration(ub)));
+    const unpaidBreaks = rawBreaks
+      .map((ub: any) => (ub instanceof Duration ? ub : new Duration(ub)))
+      .filter((ub: Duration) => ub.hours > 0 || ub.minutes > 0);
 
     return new Shift({
       id,
@@ -64,7 +66,7 @@ export default class Shift {
       payRate: Number(payRate),
       startTime,
       endTime,
-      unpaidBreaks
+      unpaidBreaks: unpaidBreaks.length > 0 ? unpaidBreaks : undefined
     });
   }
 
@@ -72,7 +74,7 @@ export default class Shift {
     shifts: Shift[];
     success: boolean;
   } {
-    let shifts: Shift[] = [];
+    let shifts = new Array<Shift>();
     let success = true;
 
     try {
@@ -93,16 +95,12 @@ export default class Shift {
       console.error('Error parsing multiple shifts:', error);
       success = false;
     }
+
     return {
       shifts,
       success
     };
   }
-
-  // TODO
-  // static inRange(): string {
-  //   return 'inRange';
-  // }
 
   // Getters
   get id(): string {
@@ -120,7 +118,7 @@ export default class Shift {
   get endTime(): Date {
     return this._endTime;
   }
-  get unpaidBreaks(): Duration[] {
+  get unpaidBreaks(): Duration[] | undefined {
     return this._unpaidBreaks;
   }
 
@@ -132,13 +130,15 @@ export default class Shift {
   }
 
   get totalBreakDuration(): Duration {
-    return this.unpaidBreaks.reduce(
-      (acc, b) => {
-        acc.hours += b.hours;
-        acc.minutes += b.minutes;
-        return acc;
-      },
-      new Duration({ hours: 0, minutes: 0 })
+    return (
+      this.unpaidBreaks?.reduce(
+        (acc, b) => {
+          acc.hours += b.hours;
+          acc.minutes += b.minutes;
+          return acc;
+        },
+        new Duration({ hours: 0, minutes: 0 })
+      ) ?? new Duration({ hours: 0, minutes: 0 })
     );
   }
 
@@ -194,12 +194,15 @@ export default class Shift {
     this._endTime = d;
   }
 
-  set unpaidBreaks(unpaidBreaks: Duration[]) {
-    if (!Array.isArray(unpaidBreaks) || unpaidBreaks.some((x) => !(x instanceof Duration))) {
-      throw new Error('Unpaid breaks should be an array of Duration objects');
+  set unpaidBreaks(unpaidBreaks: Duration[] | undefined) {
+    if (unpaidBreaks === undefined) {
+      this._unpaidBreaks = undefined;
+      return;
     }
-    // Deep copy to prevent external mutations affecting internal state
-    this._unpaidBreaks = unpaidBreaks.map((d) => new Duration({ hours: d.hours, minutes: d.minutes }));
+
+    this._unpaidBreaks = unpaidBreaks.map(
+      (duration) => new Duration({ hours: duration.hours, minutes: duration.minutes })
+    );
   }
 
   limitedDuration(fromLimit?: Date, toLimit?: Date): Duration {
@@ -224,7 +227,7 @@ export default class Shift {
       payRate: this.payRate,
       startTime: this.startTime.toISOString(),
       endTime: this.endTime.toISOString(),
-      unpaidBreaks: this.unpaidBreaks.map((b) => b.toDTO())
+      unpaidBreaks: this.unpaidBreaks?.map((b) => b.toDTO()) ?? []
     };
   }
 }

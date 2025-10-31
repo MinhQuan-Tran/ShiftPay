@@ -2,17 +2,17 @@
 import { mapStores } from 'pinia';
 
 import { useAuthStore } from '@/stores/authStore';
-import { useShiftStore } from '@/stores/shiftStore';
+import { useShiftsStore } from '@/stores/shiftStore';
 import { useShiftTemplatesStore } from '@/stores/shiftTemplateStore';
 import { useWorkInfosStore } from '@/stores/workInfoStore';
-import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
+import { useShiftSessionStore } from '@/stores/shiftSessionStore';
 
 import Shift from '@/models/Shift';
 import type { WorkInfo } from '@/types';
 
 export default {
   computed: {
-    ...mapStores(useAuthStore, useShiftStore, useShiftTemplatesStore, useWorkInfosStore, useCheckInTimeStore)
+    ...mapStores(useAuthStore, useShiftsStore, useShiftTemplatesStore, useWorkInfosStore, useShiftSessionStore)
   },
 
   methods: {
@@ -171,7 +171,7 @@ export default {
         Promise.all([shifts, templates, workInfos, checkInTime]).then(([shifts, templates, workInfos, checkInTime]) => {
           console.log('All data validated. Importing...');
 
-          this.shiftStore.add(shifts);
+          this.shiftsStore.add(shifts);
 
           templates.forEach((template: Shift, name: string) => {
             this.shiftTemplatesStore.add(name, template);
@@ -183,8 +183,8 @@ export default {
             });
           });
 
-          if (checkInTime) this.checkInTimeStore.set(checkInTime);
-          else this.checkInTimeStore.clear();
+          if (checkInTime) this.shiftSessionStore.set(checkInTime);
+          else this.shiftSessionStore.clear();
 
           console.log('Data import complete.');
           alert('Data import complete.');
@@ -200,7 +200,7 @@ export default {
     async handleLogin() {
       await this.authStore.login();
 
-      await this.shiftStore.fetch();
+      await this.shiftsStore.fetch();
     }
   }
 };

@@ -18,7 +18,7 @@ export default {
       return this.list?.filter((item) => item.toLowerCase().includes(this.value!.toLowerCase())) || [];
     }
   },
-  
+
   created() {
     this.$nextTick(() => {
       const input = (this.$refs.slot as HTMLDivElement).querySelector('input') as HTMLInputElement;
@@ -65,12 +65,8 @@ export default {
 
     <div ref="datalist" class="datalist">
       <div class="list">
-        <div
-          v-for="(itemName, index) in filteredList"
-          :key="index"
-          class="item"
-          @click="$emit('update:value', itemName)"
-        >
+        <div v-for="(itemName, index) in filteredList" :key="index" class="item"
+          @click="$emit('update:value', itemName)">
           {{ itemName }}
           <button class="delete-btn danger" type="button" v-if="deletable" @click.stop="$emit('delete-item', itemName)">
             <div class="icons8-close"></div>

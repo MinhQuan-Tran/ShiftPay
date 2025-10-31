@@ -1,11 +1,15 @@
 import { defineStore } from 'pinia';
 
-export const useCheckInTimeStore = defineStore('checkInTime', {
+export const useShiftSessionStore = defineStore('shiftSession', {
   state: () => ({
-    checkInTime: localStorage.getItem('checkInTime')
-      ? new Date(localStorage.getItem('checkInTime') as string)
-      : undefined
+    time: undefined as Date | undefined
   }),
+
+  getters: {
+    isCheckedIn(state): boolean {
+      return state.time instanceof Date && !isNaN(state.time.getTime());
+    }
+  },
 
   actions: {
     async fetch(): Promise<void> {
@@ -24,11 +28,11 @@ export const useCheckInTimeStore = defineStore('checkInTime', {
     },
 
     set(date?: Date) {
-      this.checkInTime = date ?? new Date();
+      this.time = date ?? new Date();
     },
 
     clear() {
-      this.checkInTime = undefined;
+      this.time = undefined;
     },
 
     /**
@@ -38,8 +42,8 @@ export const useCheckInTimeStore = defineStore('checkInTime', {
     enableAutoPersist(): void {
       this.$subscribe(
         function (_mutation, state) {
-          if (state.checkInTime instanceof Date) {
-            localStorage.setItem('checkInTime', state.checkInTime.toISOString());
+          if (state.time instanceof Date) {
+            localStorage.setItem('checkInTime', state.time.toISOString());
           } else {
             localStorage.removeItem('checkInTime');
           }
