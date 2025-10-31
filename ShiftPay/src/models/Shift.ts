@@ -58,7 +58,7 @@ export default class Shift {
 
     const unpaidBreaks = rawBreaks
       .map((ub: any) => (ub instanceof Duration ? ub : new Duration(ub)))
-      .filter((ub: Duration) => ub.hours > 0 || ub.minutes > 0);
+      .filter((ub: Duration) => (ub.hours + ub.minutes) > 0);
 
     return new Shift({
       id,
