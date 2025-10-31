@@ -67,7 +67,7 @@ export default {
 
       if (isNaN(this.shiftSessionStore.checkInTime!.getTime())) {
         if (confirm('Invalid check in time. Do you want to remove it?')) {
-          this.shiftSessionStore.checkInTime = undefined;
+          this.shiftSessionStore.clear();
         }
         return;
       }
