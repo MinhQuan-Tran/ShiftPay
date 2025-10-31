@@ -15,7 +15,7 @@ export default class Shift {
   private _payRate: number = 0;
   private _startTime: Date = new Date();
   private _endTime: Date = new Date();
-  private _unpaidBreaks?: Duration[] = [];
+  private _unpaidBreaks?: Duration[];
 
   // Short, tidy constructor. `id` first, auto-generated if omitted.
   constructor({ id = crypto.randomUUID(), ...rest }: ShiftParams) {

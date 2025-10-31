@@ -164,29 +164,14 @@ export const useShiftsStore = defineStore('shifts', {
         }
       }
 
-      switch (typeof input) {
-        case 'string':
-          this.shifts = this.shifts.filter((shift) => shift.id !== input);
-          break;
-
-        case 'object':
-          if (Array.isArray(input)) {
-            this.shifts = this.shifts.filter((shift) => !input.includes(shift.id));
-          } else if (input === null) {
-            // treat null like no input (optional)
-            this.shifts = [];
-          } else {
-            throw new Error('Invalid object input for delete');
-          }
-          break;
-
-        case 'undefined':
-          this.shifts = [];
-          break;
-
-        default:
-          throw new Error('Invalid input type for delete');
-      }
+      // Single shift ID
+      if (input instanceof String || typeof input === 'string')
+        this.shifts = this.shifts.filter((shift) => shift.id !== input);
+      // Multiple shift IDs
+      else if (Array.isArray(input)) this.shifts = this.shifts.filter((shift) => !input.includes(shift.id));
+      // Clear all shifts
+      else if (input === undefined) this.shifts = [];
+      else throw new Error('Invalid input type for delete');
     },
 
     /**

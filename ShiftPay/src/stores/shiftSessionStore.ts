@@ -7,7 +7,9 @@ export const useShiftSessionStore = defineStore('shiftSession', {
 
   getters: {
     isCheckedIn(state): boolean {
-      return state.checkInTime instanceof Date && !isNaN(state.checkInTime.getTime());
+      return (
+        state.checkInTime !== undefined && state.checkInTime instanceof Date && !isNaN(state.checkInTime.getTime())
+      );
     }
   },
 
