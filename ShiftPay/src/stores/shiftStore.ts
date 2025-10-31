@@ -3,10 +3,42 @@ import { api } from '@/api';
 import { useAuthStore } from './authStore';
 import Shift from '@/models/Shift';
 
-export const useShiftStore = defineStore('shift', {
+export const useShiftsStore = defineStore('shifts', {
   state: () => ({
     shifts: [] as Shift[]
   }),
+
+  getters: {
+    range(state): (startTime: Date, endTime: Date) => Shift[] {
+      return (startTime: Date, endTime: Date): Shift[] => {
+        return (state.shifts as Shift[]).filter((shift) => {
+          return (
+            // 'startTime' is before the next day of the selected date
+            new Date(shift.startTime) < endTime &&
+            // 'endTime' is after the start of the selected date
+            new Date(shift.endTime) > startTime
+          );
+        });
+      };
+    },
+
+    day(): (selectedDate: Date) => Shift[] {
+      return (selectedDate: Date): Shift[] => {
+        if (!(selectedDate instanceof Date) || isNaN(selectedDate.getTime())) {
+          return [];
+        } else {
+          const startTime = new Date(selectedDate);
+          startTime.setHours(0, 0, 0, 0);
+
+          const endTime = new Date(selectedDate);
+          endTime.setDate(endTime.getDate() + 1);
+          endTime.setHours(0, 0, 0, 0);
+
+          return this.range(startTime, endTime);
+        }
+      };
+    }
+  },
 
   actions: {
     // TODO: Add parameters for filtering
@@ -27,6 +59,8 @@ export const useShiftStore = defineStore('shift', {
         if (!parsed.success) {
           alert('Some shifts could not be loaded.');
         }
+
+        localStorage.removeItem('entries'); // Remove old key
       } catch (error: any) {
         console.error(error);
         throw new Error('Failed to fetch shifts: ' + (error && error.message ? error.message : String(error)));
@@ -75,7 +109,7 @@ export const useShiftStore = defineStore('shift', {
           const createdBatch = await api.shifts.createBatch(validatedShifts);
           console.log('Created shifts from API (batch):', createdBatch);
 
-          const parsedBatch = createdBatch.map((s: any) => Shift.parse(s));
+          const parsedBatch = Shift.parseAll(createdBatch).shifts;
           this.shifts.push(...parsedBatch);
         }
       } catch (error: any) {
@@ -102,7 +136,7 @@ export const useShiftStore = defineStore('shift', {
           throw new Error('Cannot update shift: ID not found');
         }
 
-        this.shifts[index] = Shift.parse(shiftToUpdate);
+        this.shifts[index] = shiftToUpdate;
         return;
       }
 
@@ -119,19 +153,24 @@ export const useShiftStore = defineStore('shift', {
       }
     },
 
-    async delete(id: string): Promise<void> {
+    async delete(input?: string | string[]): Promise<void> {
       const authStore = useAuthStore();
 
       if (authStore.isAuthenticated) {
         try {
-          await api.shifts.delete(id);
+          await api.shifts.delete(input);
         } catch (error: any) {
           throw new Error('Failed to delete shift: ' + (error && error.message ? error.message : String(error)));
         }
       }
 
-      delete this.shifts[this.shifts.findIndex((shift) => shift.id === id)];
-      return;
+      // Single shift ID
+      if (typeof input === 'string') this.shifts = this.shifts.filter((shift) => shift.id !== input);
+      // Multiple shift IDs
+      else if (Array.isArray(input)) this.shifts = this.shifts.filter((shift) => !input.includes(shift.id));
+      // Clear all shifts
+      else if (input === undefined) this.shifts = [];
+      else throw new Error('Invalid input type for delete');
     },
 
     /**

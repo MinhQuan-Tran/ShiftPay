@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia';
 
-export const useCheckInTimeStore = defineStore('checkInTime', {
+export const useShiftSessionStore = defineStore('shiftSession', {
   state: () => ({
-    checkInTime: localStorage.getItem('checkInTime')
-      ? new Date(localStorage.getItem('checkInTime') as string)
-      : undefined
+    checkInTime: undefined as Date | undefined
   }),
+
+  getters: {
+    isCheckedIn(state): boolean {
+      return (
+        state.checkInTime !== undefined && state.checkInTime instanceof Date && !isNaN(state.checkInTime.getTime())
+      );
+    }
+  },
 
   actions: {
     async fetch(): Promise<void> {

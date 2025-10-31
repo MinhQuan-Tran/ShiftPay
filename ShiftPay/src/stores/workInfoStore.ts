@@ -12,7 +12,7 @@ export const useWorkInfosStore = defineStore('workInfos', {
     async fetch(): Promise<void> {
       // const auth = useAuthStore();
 
-      const rawData = localStorage.getItem('prevWorkInfos') || '{}';
+      const rawData = localStorage.getItem('workInfos') || localStorage.getItem('prevWorkInfos') || '{}';
 
       // if (auth.isAuthenticated) {
       //   rawData = await api.prevWorkInfos.fetch();
@@ -33,6 +33,8 @@ export const useWorkInfosStore = defineStore('workInfos', {
           })
         )
       );
+
+      localStorage.removeItem('prevWorkInfos'); // Remove old key
     },
 
     async add(workplace: string, payRate: number): Promise<void> {

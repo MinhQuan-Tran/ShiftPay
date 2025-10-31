@@ -2,7 +2,11 @@ export default class Duration {
   private _hours?: number;
   private _minutes?: number;
 
-  constructor(props?: { hours?: number; minutes?: number; startTime?: Date; endTime?: Date } | string) {
+  constructor(
+    props?:
+      | { _hours?: number; _minutes?: number; hours?: number; minutes?: number; startTime?: Date; endTime?: Date }
+      | string
+  ) {
     if (typeof props === 'string') {
       const parts = props.split(':').map((part) => part.trim());
 
@@ -16,10 +20,18 @@ export default class Duration {
       return;
     }
 
-    const { hours, minutes, startTime, endTime } = props ?? {};
+    const { _hours, _minutes, hours, minutes, startTime, endTime } = props ?? {};
+
+    if (_hours !== undefined) {
+      this.hours = _hours;
+    }
 
     if (hours !== undefined) {
       this.hours = hours;
+    }
+
+    if (_minutes !== undefined) {
+      this.minutes = _minutes;
     }
 
     if (minutes !== undefined) {

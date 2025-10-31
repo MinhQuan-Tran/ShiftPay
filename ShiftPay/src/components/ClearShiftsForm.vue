@@ -3,7 +3,7 @@ import { mapStores } from 'pinia';
 
 import ButtonConfirm from './ButtonConfirm.vue';
 
-import { useShiftStore } from '@/stores/shiftStore';
+import { useShiftsStore } from '@/stores/shiftStore';
 
 export default {
   props: {
@@ -22,7 +22,7 @@ export default {
   },
 
   computed: {
-    ...mapStores(useShiftStore),
+    ...mapStores(useShiftsStore),
   },
 
   emits: {
@@ -59,17 +59,11 @@ export default {
         case 'day':
           console.log(startTime, endTime);
 
-          this.shiftStore.shifts = this.shiftStore.shifts.filter((shift) => {
-            const fromTime = new Date(shift.startTime);
-            const toTime = new Date(shift.endTime);
-
-            // Filter out shifts that intersect with the time range
-            return !(fromTime <= endTime && toTime >= startTime);
-          });
+          this.shiftsStore.delete(this.shiftsStore.range(startTime, endTime).map((shift) => shift.id));
           break;
 
         case 'all':
-          this.shiftStore.shifts = [];
+          this.shiftsStore.delete();
           break;
 
         default:
@@ -94,36 +88,18 @@ export default {
   <form @submit.prevent="clearShifts">
     <span>What shifts do you want to clear?</span>
     <div>
-      <input
-        type="radio"
-        id="clear-option-day"
-        v-model="formData.clearOption"
-        name="clearOption"
-        value="day"
-        required
-      />
+      <input type="radio" id="clear-option-day" v-model="formData.clearOption" name="clearOption" value="day"
+        required />
       <label for="clear-option-day">Day</label>
     </div>
     <div>
-      <input
-        type="radio"
-        id="clear-option-week"
-        v-model="formData.clearOption"
-        name="clearOption"
-        value="week"
-        required
-      />
+      <input type="radio" id="clear-option-week" v-model="formData.clearOption" name="clearOption" value="week"
+        required />
       <label for="clear-option-week">Week</label>
     </div>
     <div>
-      <input
-        type="radio"
-        id="clear-option-all"
-        v-model="formData.clearOption"
-        name="clearOption"
-        value="all"
-        required
-      />
+      <input type="radio" id="clear-option-all" v-model="formData.clearOption" name="clearOption" value="all"
+        required />
       <label for="clear-option-all">All</label>
     </div>
 

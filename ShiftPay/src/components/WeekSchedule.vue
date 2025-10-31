@@ -1,12 +1,11 @@
 <script lang="ts">
 import Duration from '@/models/Duration';
-import Shift from '@/models/Shift';
 import type { Week, Day } from '@/types';
-import { currencyFormat, getShifts } from '@/utils';
+import { currencyFormat } from '@/utils';
 
 import { mapStores } from 'pinia';
 
-import { useShiftStore } from '@/stores/shiftStore';
+import { useShiftsStore } from '@/stores/shiftStore';
 
 export default {
   props: {
@@ -15,7 +14,9 @@ export default {
       required: true
     }
   },
+
   emits: ['update:selectedDate'],
+
   data() {
     const today = new Date();
 
@@ -28,8 +29,9 @@ export default {
       selectedWeekSummaryOption: 'income'
     };
   },
+
   computed: {
-    ...mapStores(useShiftStore),
+    ...mapStores(useShiftsStore),
 
     calendar() {
       const changedDate = new Date(this.today);
@@ -70,7 +72,7 @@ export default {
         endTime.setDate(endTime.getDate() + 7);
         endTime.setHours(0, 0, 0, 0);
 
-        const shifts = getShifts(this.shiftStore.shifts as Array<Shift>, startTime, endTime);
+        const shifts = this.shiftsStore.range(startTime, endTime);
 
         week.summaries.income += shifts.reduce((acc, shift) => (acc += shift.income ?? 0), 0);
 
@@ -111,9 +113,9 @@ export default {
       return calendar;
     }
   },
+
   methods: {
     currencyFormat,
-    getShifts,
 
     updateTitleByMonth() {
       const date = new Date(this.today);
@@ -142,9 +144,11 @@ export default {
       }
     }
   },
+
   mounted() {
     this.updateTitleByMonth();
   },
+
   updated() {
     const firstChild = document.querySelector('.calendar > *:first-child');
     const secondChild = document.querySelector('.calendar > *:nth-child(2)');
@@ -176,40 +180,30 @@ export default {
         <div class="week-day" v-for="day in weekDays" :key="day">{{ day }}</div>
 
         <template v-for="(week, weekIndex) in calendar" :key="weekIndex">
-          <div
-            v-for="(day, dayIndex) in week.days"
-            :key="dayIndex"
-            @click="$emit('update:selectedDate', day.dayStartTime)"
-            :class="[
+          <div v-for="(day, dayIndex) in week.days" :key="dayIndex"
+            @click="$emit('update:selectedDate', day.dayStartTime)" :class="[
               'day-container',
               {
                 // Compare the dates only
                 selected: selectedDate && selectedDate.getTime() === day.dayStartTime.getTime(),
                 'has-shift':
-                  getShifts(shiftStore.shifts as Shift[], day.dayStartTime, day.dayEndTime).length > 0,
-                'has-shift-past': getShifts(
-                  shiftStore.shifts as Shift[],
-                  day.dayStartTime,
-                  day.dayEndTime
-                ).some((shift) => new Date(shift.startTime) < day.dayStartTime),
-                'has-shift-future': getShifts(
-                  shiftStore.shifts as Shift[],
-                  day.dayStartTime,
-                  day.dayEndTime
-                ).some((shift) => day.dayEndTime < new Date(shift.endTime))
+                  shiftsStore.range(day.dayStartTime, day.dayEndTime).length > 0,
+                'has-shift-past':
+                  shiftsStore.range(day.dayStartTime, day.dayEndTime)
+                    .some((shift) => new Date(shift.startTime) < day.dayStartTime),
+                'has-shift-future':
+                  shiftsStore.range(day.dayStartTime, day.dayEndTime)
+                    .some((shift) => day.dayEndTime < new Date(shift.endTime))
               }
-            ]"
-          >
-            <div
-              :class="[
-                'day',
-                {
-                  today: day.dayStartTime.getTime() === new Date(new Date().setHours(0, 0, 0, 0)).getTime(),
-                  'prev-month': day.prevMonth,
-                  'next-month': day.nextMonth
-                }
-              ]"
-            >
+            ]">
+            <div :class="[
+              'day',
+              {
+                today: day.dayStartTime.getTime() === new Date(new Date().setHours(0, 0, 0, 0)).getTime(),
+                'prev-month': day.prevMonth,
+                'next-month': day.nextMonth
+              }
+            ]">
               {{ day.dayStartTime.getDate() }}
             </div>
           </div>
@@ -307,7 +301,7 @@ export default {
   width: 100%;
 }
 
-.calendar > * {
+.calendar>* {
   position: relative;
   display: flex;
   align-items: center;
@@ -356,7 +350,7 @@ export default {
   }
 }
 
-.summaries > * {
+.summaries>* {
   height: 2.5rem;
 }
 

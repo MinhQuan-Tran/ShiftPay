@@ -1,5 +1,3 @@
-import Shift from '@/models/Shift';
-
 export function currencyFormat(value: number): string {
   return Intl.NumberFormat([], {
     style: 'currency',
@@ -10,19 +8,6 @@ export function currencyFormat(value: number): string {
 export function toTimeStr(date: Date): string {
   return new Date(date).toLocaleTimeString([], {
     timeStyle: 'short'
-  });
-}
-
-export function getShifts(shifts: Array<Shift>, startTime: Date, endTime: Date): Shift[] {
-  // Filter shifts for the given date
-  return shifts.filter((shift) => {
-    // Including the ones with 'startTime' in the past and 'endTime' in the future
-    return (
-      // 'startTime' is before the next day of the selected date
-      new Date(shift.startTime) < endTime &&
-      // 'endTime' is after the start of the selected date
-      new Date(shift.endTime) > startTime
-    );
   });
 }
 

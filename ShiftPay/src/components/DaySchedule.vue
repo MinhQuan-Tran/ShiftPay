@@ -1,12 +1,12 @@
 <script lang="ts">
 import Shift from '@/models/Shift';
-import { currencyFormat, toTimeStr, getShifts } from '@/utils';
+import { currencyFormat, toTimeStr } from '@/utils';
 
 import { mapStores } from 'pinia';
-import { useShiftStore } from '@/stores/shiftStore';
-import { useCheckInTimeStore } from '@/stores/checkInTimeStore';
+import { useShiftsStore } from '@/stores/shiftStore';
+import { useShiftSessionStore } from '@/stores/shiftSessionStore';
 
-import DayScheduleShift from '@/components/DayScheduleShift.vue';
+import DayScheduleShift from '@/components/DayScheduleShiftCard.vue';
 import BaseDialog from '@/components/BaseDialog.vue';
 import ClearShiftsForm from '@/components/ClearShiftsForm.vue';
 import ShiftForm from '@/components/ShiftForm.vue';
@@ -36,9 +36,11 @@ export default {
           }
           | undefined
       },
-      datetimeWidth: 'auto'
+      datetimeWidth: 'auto',
     };
   },
+
+  components: { DayScheduleShift, BaseDialog, ClearShiftsForm, ShiftForm },
 
   methods: {
     currencyFormat,
@@ -57,23 +59,15 @@ export default {
 
     handleCheckInOut() {
       // If not checked in
-      if (!this.isCheckIn) {
+      if (!this.shiftSessionStore.isCheckedIn) {
         // Check in
-        this.checkInTimeStore.set();
+        this.shiftSessionStore.set();
         return;
       }
 
-      // If no check in time found
-      if (!this.checkInTimeStore.checkInTime) {
-        if (confirm('Check in time is not set. Do you want to set it now?')) {
-          this.checkInTimeStore.set();
-        }
-        return;
-      }
-
-      if (isNaN(this.checkInTimeStore.checkInTime.getTime())) {
+      if (isNaN(this.shiftSessionStore.checkInTime!.getTime())) {
         if (confirm('Invalid check in time. Do you want to remove it?')) {
-          this.checkInTimeStore.clear();
+          this.shiftSessionStore.clear();
         }
         return;
       }
@@ -84,7 +78,7 @@ export default {
         resetForm: false,
         action: 'check in/out',
         placeholderShift: {
-          startTime: this.checkInTimeStore.checkInTime,
+          startTime: this.shiftSessionStore.checkInTime,
           endTime: new Date()
         }
       };
@@ -116,36 +110,18 @@ export default {
       });
     }
   },
+
   computed: {
-    ...mapStores(useShiftStore),
-    ...mapStores(useCheckInTimeStore),
-
-    isCheckIn() {
-      return this.checkInTimeStore.checkInTime !== undefined;
-    },
-
-    shifts() {
-      // from 12am on the given day
-      const startTime = new Date(this.selectedDate);
-      startTime.setHours(0, 0, 0, 0);
-
-      // to 12am on the next day
-      const endTime = new Date(this.selectedDate);
-      endTime.setDate(endTime.getDate() + 1);
-      endTime.setHours(0, 0, 0, 0);
-
-      this.$forceUpdate();
-
-      return getShifts(this.shiftStore.shifts as Array<Shift>, startTime, endTime);
-    }
+    ...mapStores(useShiftsStore, useShiftSessionStore),
   },
+
   mounted() {
     this.updateTimeWidth();
   },
+
   updated() {
     this.updateTimeWidth();
   },
-  components: { DayScheduleShift, BaseDialog, ClearShiftsForm, ShiftForm }
 };
 </script>
 
@@ -156,8 +132,9 @@ export default {
 
       <Transition>
         <button v-if="selectedDate.setHours(0, 0, 0, 0) == new Date().setHours(0, 0, 0, 0)" @click="handleCheckInOut"
-          id="check-in-out-btn" :class="{ primary: !isCheckIn, warning: isCheckIn }">
-          Check-{{ isCheckIn ? 'Out' : 'In' }}
+          id="check-in-out-btn"
+          :class="{ primary: !shiftSessionStore.isCheckedIn, warning: shiftSessionStore.isCheckedIn }">
+          Check-{{ shiftSessionStore.isCheckedIn ? 'Out' : 'In' }}
         </button>
       </Transition>
 
@@ -165,10 +142,10 @@ export default {
     </div>
 
     <div class="shift-list">
-      <DayScheduleShift v-for="shift in shifts!.sort((a: Shift, b: Shift) => {
+      <DayScheduleShift v-for="shift in shiftsStore.day(selectedDate).sort((a, b) => {
         // Sort by startTime, then by endTime
         return a.startTime.getTime() - b.startTime.getTime() || a.endTime.getTime() - b.endTime.getTime();
-      })" :key="shift.id" :shift="shift" :selected-date="selectedDate" @edit-shift="handleEditShift" />
+      })" :key="shift.id" :shift="(shift as Shift)" :selected-date="selectedDate" @edit-shift="handleEditShift" />
     </div>
 
     <BaseDialog ref="clearShiftsDialog" title="Clear Shifts" open-dialog-text="Clear" class="danger"
