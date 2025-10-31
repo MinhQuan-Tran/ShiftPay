@@ -90,8 +90,7 @@ export const api = {
 
       // Delete multiple shifts by IDs
       if (Array.isArray(input)) {
-        const queryParams: QueryParams = { id: input.join(',') };
-        return createRequest('shifts', { method: 'DELETE', queryParams });
+        return createRequest('shifts', { method: 'DELETE', body: { ids: input } });
       }
 
       // Delete all shifts
